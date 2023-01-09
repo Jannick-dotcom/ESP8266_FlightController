@@ -1,0 +1,18 @@
+{
+	"Frequenz" : 250,
+	"degpersec" : 180,
+
+	"pid_p_gain_roll" : 1,
+	"pid_i_gain_roll" : 1,
+	"pid_d_gain_roll" : 1,
+
+	"pid_p_gain_pitch" : 1,
+	"pid_i_gain_pitch" : 1,
+	"pid_d_gain_pitch" : 1,
+
+	"pid_p_gain_yaw" :  1,
+	"pid_i_gain_yaw" :  1,
+	"pid_d_gain_yaw" :  1,
+
+	"pid_max" : 200
+}
