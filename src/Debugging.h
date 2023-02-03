@@ -38,10 +38,40 @@ void debugPID() {
   }
 }
 
+void debugSensor()
+{
+  if (temp->debugging)
+  {
+    Serial.print("Gyro_X\tGyro_Y\tGyro_Z\tAcc_X\tAcc_Y\tAcc_Z\tTemp\n");
+    Serial.print(temp->gyroX);
+    Serial.print("\t");
+    Serial.print(temp->gyroY);
+    Serial.print("\t");
+    Serial.print(temp->gyroZ);
+    // Serial.print("\t");
+    // Serial.print(temp->ax);
+    // Serial.print("\t");
+    // Serial.print(temp->ay);
+    // Serial.print("\t");
+    // Serial.print(temp->az);
+    // Serial.print("\t");
+    // Serial.print(temp->temperature);
+    Serial.print("\n");
+  }
+}
+
 void debugLoop() {
   if (temp->debugging)
   {
     Serial.println("LOOP");
+  }
+}
+
+void debugPrint(String str)
+{
+  if(temp->debugging)
+  {
+    Serial.println(str);
   }
 }
 
