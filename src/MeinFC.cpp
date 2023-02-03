@@ -9,14 +9,8 @@ struct vals *temp;
 #include <Wire.h>
 #include "FlySkyIBus.h"
 
-
 void setup() {
   temp = new struct vals;
-  ///////////////////////////////////////////////////////
-  setupServer();            //Server vorbereiten und starten -> Server.h
-  SPIFFS.begin();           //Flash Speicher vorbereiten
-  loadconfig();             //Konfigurationen aus Flash Speicher Laden
-  ////////////////////////////////////////////////////
   if(!temp->debugging)
   {
     IBus.begin(Serial);       //Serielle Schnittstelle wird mit 115200 baud initialisiert
@@ -25,17 +19,22 @@ void setup() {
   {
     Serial.begin(74880);
   }
+  ///////////////////////////////////////////////////////
+  setupServer();            //Server vorbereiten und starten -> Server.h
+  SPIFFS.begin();           //Flash Speicher vorbereiten
+  loadconfig();             //Konfigurationen aus Flash Speicher Laden
+  ////////////////////////////////////////////////////
   /////////////////////////////////////////////Sensoroffsets berechnen
   SensorInit();  //MPU6050 kalibrieren. Drohne nicht bewegen!!
   ////////////////////////////Servo und 4 Motoren ansprechen
-  pinMode(temp->hr, OUTPUT); //HR
-  pinMode(temp->vr, OUTPUT); //VR
-  pinMode(temp->hl, OUTPUT); //HL
-  pinMode(temp->vl, OUTPUT); //VL
-  pinMode(temp->camServo, OUTPUT); //CAMSERVO
   if (!temp->debugging)
   {
 #ifdef ESP8266
+    pinMode(temp->hr, OUTPUT); //HR
+    pinMode(temp->vr, OUTPUT); //VR
+    pinMode(temp->hl, OUTPUT); //HL
+    pinMode(temp->vl, OUTPUT); //VL
+    pinMode(temp->camServo, OUTPUT); //CAMSERVO
     writePWM(temp->hr,1000);
     writePWM(temp->vr,1000);
     writePWM(temp->hl,1000);
@@ -61,8 +60,9 @@ void loop() {
   if(temp->Arming < 1500 || temp->debugging) // Wenn motoren nicht gearmt sind dann kümmere dich nur um den Server
   {
     server.handleClient();
+    MDNS.update();
     yield();
   }
 #endif
-  debugLoop();
+  // debugLoop();
 }
