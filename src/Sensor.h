@@ -67,25 +67,28 @@ void SensorInit() {
       Wire.endTransmission();                                                    //End the transmission with the gyro
       delay(10);*/
 
-    for (uint8_t b = 0; b < 10; b++) {
-      for (uint16_t i = 0; i < 1000; i++) { //Sensor kalibrieren
-        MPU_getData();
-        temp->gxC += temp->gx;
-        temp->gyC += temp->gy;
-        temp->gzC += temp->gz;
-        temp->axC += temp->ax;
-        temp->ayC += temp->ay;
-        temp->azC += temp->az;
-        yield();
+    if(!temp->debugging)
+    {
+      for (uint8_t b = 0; b < 10; b++) {
+        for (uint16_t i = 0; i < 1000; i++) { //Sensor kalibrieren
+          MPU_getData();
+          temp->gxC += temp->gx;
+          temp->gyC += temp->gy;
+          temp->gzC += temp->gz;
+          temp->axC += temp->ax;
+          temp->ayC += temp->ay;
+          temp->azC += temp->az;
+          yield();
+        }
       }
+      temp->gxC /= 10000.0;
+      temp->gyC /= 10000.0;
+      temp->gzC /= 10000.0;
+      temp->axC /= 10000.0;
+      temp->ayC /= 10000.0;
+      temp->azC /= 10000.0;
+      delay(10);
     }
-    temp->gxC /= 10000.0;
-    temp->gyC /= 10000.0;
-    temp->gzC /= 10000.0;
-    temp->axC /= 10000.0;
-    temp->ayC /= 10000.0;
-    temp->azC /= 10000.0;
-    delay(10);
 
     //Accelerometer angle calculations
     temp->acc_total_vector = sqrt((temp->ax * temp->ax) + (temp->ay * temp->ay) + (temp->az * temp->az)); //Calculate the total accelerometer vector.
