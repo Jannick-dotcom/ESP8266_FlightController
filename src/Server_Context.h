@@ -11,6 +11,9 @@
 #include <ESP8266WebServer.h>
 #include "FS.h"
 #include "core_esp8266_waveform.h" //Nützlich für PWM
+#include <WiFiUdp.h>
+#include <ESP8266mDNS.h>
+// #include "LittleFS.h"
 ESP8266WebServer server(80);  //Auf Port 80
 #endif
 
@@ -28,7 +31,7 @@ bool loadconfig() {
     StaticJsonDocument<800> json;
     deserializeJson(json, configFile);
     configFile.close();
-    temp->Frequenz = json ["Frequenz"]; //Frequenz
+    temp->Frequenz = json["Frequenz"]; //Frequenz
     temp->degpersec = json["degpersec"]; //Maximale Rotationsgeschwindigkeit im Rate Modus
     temp->pid_max = json["pid_max"];                //Maximum output of the PID-controller (+/-)
 
@@ -44,18 +47,17 @@ bool loadconfig() {
     temp->pid_i_gain_yaw = json["pid_i_gain_yaw"];      //Gain setting for the pitch I-controller.
     temp->pid_d_gain_yaw = json["pid_d_gain_yaw"];      //Gain setting for the pitch D-controller.
 
-    /*
-      pid_p_gain_roll = (0.004 / Frequenz) * pid_p_gain_roll;
-      pid_i_gain_roll = (0.004 / Frequenz) * pid_i_gain_roll;
-      pid_d_gain_roll = (0.004 / Frequenz) * pid_d_gain_roll;
+    temp->pid_p_gain_roll = temp->pid_p_gain_roll;
+    temp->pid_i_gain_roll = temp->pid_i_gain_roll / temp->Frequenz;
+    temp->pid_d_gain_roll = temp->pid_d_gain_roll / temp->Frequenz;
 
-      pid_p_gain_pitch = (0.004 / Frequenz) * pid_p_gain_pitch;
-      pid_i_gain_pitch = (0.004 / Frequenz) * pid_i_gain_pitch;
-      pid_d_gain_pitch = (0.004 / Frequenz) * pid_d_gain_pitch;
+    temp->pid_p_gain_pitch = temp->pid_p_gain_pitch;
+    temp->pid_i_gain_pitch = temp->pid_i_gain_pitch / temp->Frequenz;
+    temp->pid_d_gain_pitch = temp->pid_d_gain_pitch / temp->Frequenz;
 
-      pid_p_gain_yaw = (0.004 / Frequenz) * pid_p_gain_yaw;
-      pid_i_gain_yaw = (0.004 / Frequenz) * pid_i_gain_yaw;
-      pid_d_gain_yaw = (0.004 / Frequenz) * pid_d_gain_yaw;*/
+    temp->pid_p_gain_yaw = temp->pid_p_gain_yaw;
+    temp->pid_i_gain_yaw = temp->pid_i_gain_yaw / temp->Frequenz;
+    temp->pid_d_gain_yaw = temp->pid_d_gain_yaw / temp->Frequenz;
     return 0;
   }
   else
@@ -70,16 +72,16 @@ bool loadconfig() {
     json["pid_max"] = temp->pid_max;     //Maximaler PID wert
 
     json["pid_p_gain_roll"] = temp->pid_p_gain_roll;               //Gain setting for the roll P-controller
-    json["pid_i_gain_roll"] = temp->pid_i_gain_roll;              //Gain setting for the roll I-controller
-    json["pid_d_gain_roll"] = temp->pid_d_gain_roll;              //Gain setting for the roll D-controller
+    json["pid_i_gain_roll"] = temp->pid_i_gain_roll / temp->Frequenz;              //Gain setting for the roll I-controller
+    json["pid_d_gain_roll"] = temp->pid_d_gain_roll / temp->Frequenz;              //Gain setting for the roll D-controller
 
     json["pid_p_gain_pitch"] = temp->pid_p_gain_pitch;  //Gain setting for the pitch P-controller.
-    json["pid_i_gain_pitch"] = temp->pid_i_gain_pitch;  //Gain setting for the pitch I-controller.
-    json["pid_d_gain_pitch"] = temp->pid_d_gain_pitch;  //Gain setting for the pitch D-controller.
+    json["pid_i_gain_pitch"] = temp->pid_i_gain_pitch / temp->Frequenz;  //Gain setting for the pitch I-controller.
+    json["pid_d_gain_pitch"] = temp->pid_d_gain_pitch / temp->Frequenz;  //Gain setting for the pitch D-controller.
 
     json["pid_p_gain_yaw"] = temp->pid_p_gain_yaw;                //Gain setting for the pitch P-controller. //4.0
-    json["pid_i_gain_yaw"] = temp->pid_i_gain_yaw;               //Gain setting for the pitch I-controller. //0.02
-    json["pid_d_gain_yaw"] = temp->pid_d_gain_yaw;                //Gain setting for the pitch D-controller.
+    json["pid_i_gain_yaw"] = temp->pid_i_gain_yaw / temp->Frequenz;               //Gain setting for the pitch I-controller. //0.02
+    json["pid_d_gain_yaw"] = temp->pid_d_gain_yaw / temp->Frequenz;                //Gain setting for the pitch D-controller.
 
     serializeJson(json, configFile);
     configFile.close();
@@ -110,9 +112,12 @@ void root()
   webpage += "</head>";
   webpage += "<body>";
   webpage += "<h1>Flight Controller</h1>";
-  webpage += "<h4>Errorcode: " + String(temp->HardwareIssues) + "</h2>";
+  if(temp->HardwareIssues > 0)
+  {
+    webpage += "<h4>Errorcode: " + String(temp->HardwareIssues) + "</h2>";
+  }
   webpage += "<table style='width:100%'> <tr>";
-  webpage += "<tr><form><input type='button' value='Setup der Drohne aufrufen' onclick = window.location.href='http://192.168.4.1/setup'></form></tr>";
+  // webpage += "<tr><form><input type='button' value='Setup der Drohne aufrufen' onclick = window.location.href='http://192.168.4.1/setup'></form></tr>";
   webpage += "<form action='http://192.168.4.1/save' method='POST'>";
 
   toString(temp->Frequenz, value);
@@ -146,7 +151,7 @@ void root()
   webpage += "</table>";
 
   webpage += "<input type='submit' value='Senden'></form>";
-  webpage += "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
+  webpage += "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update' accept='.bin'><input type='submit' value='Update'></form>";
   webpage += "</body>";
   webpage += "</html>";
   server.send(200, "text/html", webpage); // Send a response to the client asking for input
@@ -155,10 +160,6 @@ void root()
 void handleSave() {
   if (server.args() > 0 ) { // Arguments were received
     for ( uint8_t i = 0; i < server.args(); i++ ) {
-      //Serial.print(server.argName(i)); // Display the argument
-      //Serial.print(" : ");
-      //Serial.println(server.arg(i).toFloat());
-
       if (server.argName(i) == "Frequenz")
       {
         temp->Frequenz = server.arg(i).toFloat();
@@ -221,16 +222,16 @@ void handleSave() {
     json["pid_max"] = temp->pid_max;     //Maximaler PID wert
 
     json["pid_p_gain_roll"] = temp->pid_p_gain_roll;              //Gain setting for the roll P-controller.
-    json["pid_i_gain_roll"] = temp->pid_i_gain_roll;              //Gain setting for the roll I-controller.
-    json["pid_d_gain_roll"] = temp->pid_d_gain_roll;              //Gain setting for the roll D-controller.
+    json["pid_i_gain_roll"] = temp->pid_i_gain_roll * temp->Frequenz;              //Gain setting for the roll I-controller.
+    json["pid_d_gain_roll"] = temp->pid_d_gain_roll * temp->Frequenz;              //Gain setting for the roll D-controller.
 
     json["pid_p_gain_pitch"] = temp->pid_p_gain_pitch;            //Gain setting for the pitch P-controller.
-    json["pid_i_gain_pitch"] = temp->pid_i_gain_pitch;            //Gain setting for the pitch I-controller.
-    json["pid_d_gain_pitch"] = temp->pid_d_gain_pitch;            //Gain setting for the pitch D-controller.
+    json["pid_i_gain_pitch"] = temp->pid_i_gain_pitch * temp->Frequenz;            //Gain setting for the pitch I-controller.
+    json["pid_d_gain_pitch"] = temp->pid_d_gain_pitch * temp->Frequenz;            //Gain setting for the pitch D-controller.
 
     json["pid_p_gain_yaw"] = temp->pid_p_gain_yaw;                //Gain setting for the pitch P-controller.
-    json["pid_i_gain_yaw"] = temp->pid_i_gain_yaw;                //Gain setting for the pitch I-controller.
-    json["pid_d_gain_yaw"] = temp->pid_d_gain_yaw;                //Gain setting for the pitch D-controller.
+    json["pid_i_gain_yaw"] = temp->pid_i_gain_yaw * temp->Frequenz;                //Gain setting for the pitch I-controller.
+    json["pid_d_gain_yaw"] = temp->pid_d_gain_yaw * temp->Frequenz;                //Gain setting for the pitch D-controller.
 
     serializeJson(json, configFile);
     configFile.close();
@@ -247,22 +248,24 @@ void setupServer() {
   WiFi.persistent(false);
   WiFi.mode(WIFI_AP);       //Als Access-Point konfiguieren
   WiFi.softAP(temp->ssid, temp->pass);  //Access-Point aufmachen
+  MDNS.begin("Drone");
   yield();                  //Um background prozesse kümmern
   //////////////////////////////////////Over the Air Uploads
   server.on("/update", HTTP_POST, []() {
-    Serial.println("RESET!");
+    debugPrint("RESET!");
     ESP.restart();
     yield();
   }, []() {
     HTTPUpload& upload = server.upload();
     if (upload.status == UPLOAD_FILE_START) {
-      // WiFiUDP::stopAll();
+      WiFiUDP::stopAll();
       uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
       Update.begin(maxSketchSpace);
-      Serial.println("Start");
+      debugPrint("Start");
     }
     else if (upload.status == UPLOAD_FILE_WRITE) {
       Update.write(upload.buf, upload.currentSize);
+      yield();
     }
     else if (upload.status == UPLOAD_FILE_END) {
       if (Update.end(true))
@@ -271,6 +274,7 @@ void setupServer() {
         webpage += "<META HTTP-EQUIV='Refresh' CONTENT='10; URL=http://192.168.4.1'>";
         webpage += "<html><body>Success! But wait while i reboot! You will be redirected</body></html>";
         server.send(200, "text/html", webpage);
+        debugPrint("Success!");
       }
       else
       {
@@ -278,7 +282,9 @@ void setupServer() {
         webpage += "<META HTTP-EQUIV='Refresh' CONTENT='10; URL=http://192.168.4.1'>";
         webpage += "<html><body>NO Success!!! But wait while i reboot! You will be redirected</body></html>";
         server.send(200, "text/html", webpage);
+        debugPrint("NO Success!");
       }
+      yield();
     }
   });
   /////////////////////////////Variablenmodifikationsseite
