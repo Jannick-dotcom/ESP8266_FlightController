@@ -6,34 +6,81 @@
 #include <ArduinoJson.h>
 #include "Variables.h"
 
+const String inBreite = "200";
+const String inHoehe = "20";
+
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include "FS.h"
 #include "core_esp8266_waveform.h" //Nützlich für PWM
 #include <WiFiUdp.h>
 #include <ESP8266mDNS.h>
-// #include "LittleFS.h"
+#include "LittleFS.h"
 ESP8266WebServer server(80);  //Auf Port 80
+
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncWebSrv.h>
+#include <WebSerial.h>
+AsyncWebServer serialserver(8080);
 #endif
 
 #ifdef ESP32
 #include <WiFi.h>
 #include <Update.h>
 #include <WebServer.h>
-#include <SPIFFS.h>
+#include "LittleFS.h"
+#include <WebSerial.h>
 WebServer server(80);  //Auf Port 80
 #endif
 
+void saveConfig()
+{
+  StaticJsonDocument<800> json;
+  if (LittleFS.exists("config.json"))
+  {
+    LittleFS.remove("/config.json");
+  }
+  File configFile = LittleFS.open("/config.json", "w");
+
+  json["Frequenz"] = temp->Frequenz; //Durchlauffrequenz
+  json["degpersec"] = temp->degpersec; //Maximale Rotationsgeschwindigkeit im Rate Modus
+  json["pid_max"] = temp->pid_max;     //Maximaler PID wert
+
+  json["vl"] = temp->vl; //Pin des Vorderen linken Motors
+  json["vr"] = temp->vr; //Pin des Vorderen rechten Motors
+  json["hl"] = temp->hl; //Pin des Hinteren linken Motors
+  json["hr"] = temp->hr; //Pin des Hinteren rechten Motors
+
+  json["pid_p_gain_roll"] = temp->pid_p_gain_roll;              //Gain setting for the roll P-controller.
+  json["pid_i_gain_roll"] = temp->pid_i_gain_roll * temp->Frequenz;              //Gain setting for the roll I-controller.
+  json["pid_d_gain_roll"] = temp->pid_d_gain_roll * temp->Frequenz;              //Gain setting for the roll D-controller.
+
+  json["pid_p_gain_pitch"] = temp->pid_p_gain_pitch;            //Gain setting for the pitch P-controller.
+  json["pid_i_gain_pitch"] = temp->pid_i_gain_pitch * temp->Frequenz;            //Gain setting for the pitch I-controller.
+  json["pid_d_gain_pitch"] = temp->pid_d_gain_pitch * temp->Frequenz;            //Gain setting for the pitch D-controller.
+
+  json["pid_p_gain_yaw"] = temp->pid_p_gain_yaw;                //Gain setting for the pitch P-controller.
+  json["pid_i_gain_yaw"] = temp->pid_i_gain_yaw * temp->Frequenz;                //Gain setting for the pitch I-controller.
+  json["pid_d_gain_yaw"] = temp->pid_d_gain_yaw * temp->Frequenz;                //Gain setting for the pitch D-controller.
+
+  serializeJson(json, configFile);
+  configFile.close();
+}
+
 bool loadconfig() {
-  if (SPIFFS.exists("/config.json")) {
-    File configFile = SPIFFS.open("/config.json", "r");
+  if (LittleFS.exists("/config.json")) {
+    File configFile = LittleFS.open("/config.json", "r");
     StaticJsonDocument<800> json;
     deserializeJson(json, configFile);
     configFile.close();
     temp->Frequenz = json["Frequenz"]; //Frequenz
     temp->degpersec = json["degpersec"]; //Maximale Rotationsgeschwindigkeit im Rate Modus
     temp->pid_max = json["pid_max"];                //Maximum output of the PID-controller (+/-)
+
+    temp->vl = json["vl"]; //Pin des Vorderen linken Motors
+    temp->vr = json["vr"]; //Pin des Vorderen rechten Motors
+    temp->hl = json["hl"]; //Pin des Hinteren linken Motors
+    temp->hr = json["hr"]; //Pin des Hinteren rechten Motors
 
     temp->pid_p_gain_roll = json["pid_p_gain_roll"];    //Gain setting for the roll P-controller
     temp->pid_i_gain_roll = json["pid_i_gain_roll"];    //Gain setting for the roll I-controller
@@ -63,28 +110,8 @@ bool loadconfig() {
   else
   {
     temp->HardwareIssues = 2; //First time of Boot or Spiffs broken
-    SPIFFS.format();
-    StaticJsonDocument<800> json;
-    File configFile = SPIFFS.open("/config.json", "w");
-
-    json["Frequenz"] = temp->Frequenz;
-    json["degpersec"] = temp->degpersec; //Maximale Rotationsgeschwindigkeit im Rate Modus
-    json["pid_max"] = temp->pid_max;     //Maximaler PID wert
-
-    json["pid_p_gain_roll"] = temp->pid_p_gain_roll;               //Gain setting for the roll P-controller
-    json["pid_i_gain_roll"] = temp->pid_i_gain_roll / temp->Frequenz;              //Gain setting for the roll I-controller
-    json["pid_d_gain_roll"] = temp->pid_d_gain_roll / temp->Frequenz;              //Gain setting for the roll D-controller
-
-    json["pid_p_gain_pitch"] = temp->pid_p_gain_pitch;  //Gain setting for the pitch P-controller.
-    json["pid_i_gain_pitch"] = temp->pid_i_gain_pitch / temp->Frequenz;  //Gain setting for the pitch I-controller.
-    json["pid_d_gain_pitch"] = temp->pid_d_gain_pitch / temp->Frequenz;  //Gain setting for the pitch D-controller.
-
-    json["pid_p_gain_yaw"] = temp->pid_p_gain_yaw;                //Gain setting for the pitch P-controller. //4.0
-    json["pid_i_gain_yaw"] = temp->pid_i_gain_yaw / temp->Frequenz;               //Gain setting for the pitch I-controller. //0.02
-    json["pid_d_gain_yaw"] = temp->pid_d_gain_yaw / temp->Frequenz;                //Gain setting for the pitch D-controller.
-
-    serializeJson(json, configFile);
-    configFile.close();
+    LittleFS.format();
+    saveConfig();
     return 1;
   }
 }
@@ -94,16 +121,46 @@ void toString(double value, char *buffer)
   dtostrf(value, 4, 3, buffer);
 }
 
+void setupDrone()
+{
+  String webpage;
+  char value[20];
+  webpage =  "<html>";
+  webpage += "<head><title>ESP8266 Flight Controller</title>";
+  webpage += "<style> body { margin:0 auto; background-color: #000000; font-size:40px; font-family: Arial, Helvetica, Sans-Serif; Color: white; height: 90%; width: 90%}";
+  webpage += "</style>";
+  webpage += "</head>";
+  webpage += "<body>";
+  webpage += "<h1>Flight Controller</h1>";
+  webpage += "<table style='width:100%'> <tr>";
+  webpage += "<form action='/'><input type='submit' value='Back'></form>";
+  webpage += "<form action='/save' method='POST'>";
+  toString(temp->hl, value);
+  webpage += "<tr><td>RearLeft Pin:</td><td><input type='number' step='1' name='RearLeft' style='width: " + inBreite + "px; height: " + inHoehe + "px' value='" + String(value) + "' min='0' max='20'></td></tr>";
+  toString(temp->hr, value);
+  webpage += "<tr><td>RearRight Pin:</td><td><input type='number' step='1' name='RearRight' style='width: " + inBreite + "px; height: " + inHoehe + "px' value='" + String(value) + "' min='0' max='20'></td></tr>";
+  toString(temp->vl, value);
+  webpage += "<tr><td>FrontLeft Pin:</td><td><input type='number' step='1' name='FrontLeft' style='width: " + inBreite + "px; height: " + inHoehe + "px' value='" + String(value) + "' min='0' max='20'></td></tr>";
+  toString(temp->vr, value);
+  webpage += "<tr><td>FrontRight Pin:</td><td><input type='number' step='1' name='FrontRight' style='width: " + inBreite + "px; height: " + inHoehe + "px' value='" + String(value) + "' min='0' max='20'></td></tr>";
+  webpage += "</table>";
+  webpage += "<input type='submit' value='Senden'></form>";
+  webpage += "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update' accept='.bin'><input type='submit' value='Update'></form>";
+  webpage += "<form method='GET' action='http://drone.local:8080/webserial'><input type='submit' value='Webserial'></form>";
+  webpage += "<form method='POST' action='/reset'><input type='submit' value='RESET'></form>";
+  webpage += "</body>";
+  webpage += "</html>";
+  server.send(200, "text/html", webpage); // Send a response to the client asking for input
+}
+
 void root()
 {
-  // if(loadconfig()) //Wenn das erste mal auf den Server zugegriffen wird das setup aufrufen
-  // {
-  //   setupDrone();
-  //   return;
-  // }
+  if(loadconfig()) //Wenn das erste mal auf den Server zugegriffen wird das setup aufrufen
+  {
+    setupDrone();
+    return;
+  }
   String webpage;
-  const String inBreite = "200";
-  const String inHoehe = "20";
   char value[20];
   webpage =  "<html>";
   webpage += "<head><title>ESP8266 Flight Controller</title>";
@@ -117,12 +174,11 @@ void root()
     webpage += "<h4>Errorcode: " + String(temp->HardwareIssues) + "</h2>";
   }
   webpage += "<table style='width:100%'> <tr>";
-  // webpage += "<tr><form><input type='button' value='Setup der Drohne aufrufen' onclick = window.location.href='http://192.168.4.1/setup'></form></tr>";
-  webpage += "<form action='http://192.168.4.1/save' method='POST'>";
+  webpage += "<tr><form method='GET' action='/setup'><input type='submit' value='Setup der Drohne aufrufen'></form></tr>";
 
+  webpage += "<form action='/save' method='POST'>";
   toString(temp->Frequenz, value);
   webpage += "<tr><td>Frequenz[Hz]:</td><td><input type='number' step='0.1' name='Frequenz' style='width: " + inBreite + "px; height: " + inHoehe + "px' value='" + String(value) + "' min='250' max='4000'></td></tr>";
-
   toString(temp->degpersec, value);
   webpage += "<tr><td>degpersec:</td><td><input type='number' step='0.001' name='degpersec' style='width: " + inBreite + "px; height: " + inHoehe + "px' value='" + String(value) + "' min='0.001' max='400'></td></tr>";
   toString(temp->pid_max, value);
@@ -151,7 +207,6 @@ void root()
   webpage += "</table>";
 
   webpage += "<input type='submit' value='Senden'></form>";
-  webpage += "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update' accept='.bin'><input type='submit' value='Update'></form>";
   webpage += "</body>";
   webpage += "</html>";
   server.send(200, "text/html", webpage); // Send a response to the client asking for input
@@ -173,6 +228,24 @@ void handleSave() {
       {
         temp->pid_max = server.arg(i).toFloat();
       }
+
+      else if (server.argName(i) == "FrontLeft")
+      {
+        temp->vl = server.arg(i).toInt();
+      }
+      else if (server.argName(i) == "FrontRight")
+      {
+        temp->vr = server.arg(i).toInt();
+      }
+      else if (server.argName(i) == "RearLeft")
+      {
+        temp->hl = server.arg(i).toInt();
+      }
+      else if (server.argName(i) == "RearRight")
+      {
+        temp->hr = server.arg(i).toInt();
+      }
+
       else if (server.argName(i) == "pid_p_gain_roll")
       {
         temp->pid_p_gain_roll = server.arg(i).toFloat();
@@ -210,31 +283,7 @@ void handleSave() {
         temp->pid_d_gain_yaw = server.arg(i).toFloat();
       }
     }
-    StaticJsonDocument<800> json;
-    if (SPIFFS.exists("config.json"))
-    {
-      SPIFFS.remove("/config.json");
-    }
-    File configFile = SPIFFS.open("/config.json", "w");
-
-    json["Frequenz"] = temp->Frequenz; //Durchlauffrequenz
-    json["degpersec"] = temp->degpersec; //Maximale Rotationsgeschwindigkeit im Rate Modus
-    json["pid_max"] = temp->pid_max;     //Maximaler PID wert
-
-    json["pid_p_gain_roll"] = temp->pid_p_gain_roll;              //Gain setting for the roll P-controller.
-    json["pid_i_gain_roll"] = temp->pid_i_gain_roll * temp->Frequenz;              //Gain setting for the roll I-controller.
-    json["pid_d_gain_roll"] = temp->pid_d_gain_roll * temp->Frequenz;              //Gain setting for the roll D-controller.
-
-    json["pid_p_gain_pitch"] = temp->pid_p_gain_pitch;            //Gain setting for the pitch P-controller.
-    json["pid_i_gain_pitch"] = temp->pid_i_gain_pitch * temp->Frequenz;            //Gain setting for the pitch I-controller.
-    json["pid_d_gain_pitch"] = temp->pid_d_gain_pitch * temp->Frequenz;            //Gain setting for the pitch D-controller.
-
-    json["pid_p_gain_yaw"] = temp->pid_p_gain_yaw;                //Gain setting for the pitch P-controller.
-    json["pid_i_gain_yaw"] = temp->pid_i_gain_yaw * temp->Frequenz;                //Gain setting for the pitch I-controller.
-    json["pid_d_gain_yaw"] = temp->pid_d_gain_yaw * temp->Frequenz;                //Gain setting for the pitch D-controller.
-
-    serializeJson(json, configFile);
-    configFile.close();
+    saveConfig();
     String webpage;
     webpage += "<META HTTP-EQUIV='Refresh' CONTENT='1; URL=http://192.168.4.1'>";
     webpage += "<html><style> body { margin:50px auto; background-color: #000000; font-size:60px; font-family: Arial, Helvetica, Sans-Serif; Color: white; height: 90%; width: 90%}";
@@ -252,9 +301,7 @@ void setupServer() {
   yield();                  //Um background prozesse kümmern
   //////////////////////////////////////Over the Air Uploads
   server.on("/update", HTTP_POST, []() {
-    debugPrint("RESET!");
-    ESP.restart();
-    yield();
+    resetDrone();
   }, []() {
     HTTPUpload& upload = server.upload();
     if (upload.status == UPLOAD_FILE_START) {
@@ -271,7 +318,7 @@ void setupServer() {
       if (Update.end(true))
       {
         String webpage;
-        webpage += "<META HTTP-EQUIV='Refresh' CONTENT='10; URL=http://192.168.4.1'>";
+        webpage += "<META HTTP-EQUIV='Refresh' CONTENT='10; URL=/'>";
         webpage += "<html><body>Success! But wait while i reboot! You will be redirected</body></html>";
         server.send(200, "text/html", webpage);
         debugPrint("Success!");
@@ -279,7 +326,7 @@ void setupServer() {
       else
       {
         String webpage;
-        webpage += "<META HTTP-EQUIV='Refresh' CONTENT='10; URL=http://192.168.4.1'>";
+        webpage += "<META HTTP-EQUIV='Refresh' CONTENT='10; URL=/'>";
         webpage += "<html><body>NO Success!!! But wait while i reboot! You will be redirected</body></html>";
         server.send(200, "text/html", webpage);
         debugPrint("NO Success!");
@@ -290,11 +337,26 @@ void setupServer() {
   /////////////////////////////Variablenmodifikationsseite
   server.on("/", root);
   server.on("/save", handleSave);
+  /////////////////////////////Resetseite
+  server.on("/reset", resetDrone);
   /////////////////////////////Setupseite
-  // server.on("/setup", setupDrone);
-  // server.on("/saveSetup", saveSetup);
+  server.on("/setup", setupDrone);
   /////////////////////////////Server Starten
   server.begin();
+  WebSerial.begin(&serialserver);
+  serialserver.begin();
+}
+
+void handleServer()
+{
+  #if defined ESP8266
+  if(temp->Arming < 1500 || temp->debugging) // Wenn motoren nicht gearmt sind dann kümmere dich auch um den Server
+  {
+    server.handleClient();
+    MDNS.update();
+    yield();
+  }
+  #endif
 }
 
 #endif //Server_h
