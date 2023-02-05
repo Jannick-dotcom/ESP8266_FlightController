@@ -20,6 +20,22 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "utility": "cpp",
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "regex": "cpp",
+        "atomic": "cpp",
+        "bit": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "bitset": "cpp",
+        "exception": "cpp",
+        "algorithm": "cpp",
+        "memory_resource": "cpp",
+        "iosfwd": "cpp",
+        "limits": "cpp",
+        "new": "cpp",
+        "numeric": "cpp",
+        "sstream": "cpp",
+        "streambuf": "cpp",
+        "typeinfo": "cpp"
     }
 }
