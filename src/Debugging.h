@@ -56,7 +56,7 @@ void debugPrint(String str)
   if(temp->debugging)
   {
     WebSerial.println(str);
-    // Serial.println(str);
+    Serial.println(str);
   }
 }
 
@@ -65,7 +65,7 @@ void debugPrint(float str)
   if(temp->debugging)
   {
     WebSerial.println(str);
-    // Serial.println(str);
+    Serial.println(str);
   }
 }
 
