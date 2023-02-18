@@ -15,10 +15,6 @@ void setup() {
   {
     IBus.begin(Serial);       //Serielle Schnittstelle wird mit 115200 baud initialisiert
   }
-  else
-  {
-    Serial.begin(74880);
-  }
   ///////////////////////////////////////////////////////
   setupServer();            //Server vorbereiten und starten -> Server.h
   SPIFFS.begin();           //Flash Speicher vorbereiten
