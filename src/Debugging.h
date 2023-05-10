@@ -7,23 +7,21 @@
 
 void debugPrint(float str);
 void debugPrint(String str);
+uint16_t sincelastupdate = 0;
 
 void debugReceiver() {
-  debugPrint("Throttle\tRoll\tPitch\tYaw\tArm\tMode\tCampitch\n");
   debugPrint(temp->Throttle);
-  debugPrint("\t\t");
+  debugPrint(",");
   debugPrint(temp->Roll);
-  debugPrint("\t");
+  debugPrint(",");
   debugPrint(temp->Pitch);
-  debugPrint("\t");
+  debugPrint(",");
   debugPrint(temp->Yaw);
-  debugPrint("\t");
+  debugPrint(",");
   debugPrint(temp->Arming);
-  debugPrint("\t");
+  debugPrint(",");
   debugPrint(temp->Mode);
-  debugPrint("\t");
-  debugPrint(temp->Campitch);
-  debugPrint("\t\n");
+  debugPrint("\n");
 }
 
 void debugPID() {
@@ -53,18 +51,12 @@ void debugLoop() {
 
 void debugPrint(String str)
 {
-  if(temp->debugging)
-  {
-    WebSerial.println(str);
-  }
+  Serial.println(str);
 }
 
 void debugPrint(float str)
 {
-  if(temp->debugging)
-  {
-    WebSerial.println(str);
-  }
+  Serial.println(str);
 }
 
 #endif

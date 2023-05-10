@@ -17,11 +17,6 @@ const String inHoehe = "20";
 #include <ESP8266mDNS.h>
 #include "LittleFS.h"
 ESP8266WebServer server(80);  //Auf Port 80
-
-#include <ESPAsyncTCP.h>
-#include <ESPAsyncWebSrv.h>
-#include <WebSerial.h>
-AsyncWebServer serialserver(8080);
 #endif
 
 #ifdef ESP32
@@ -123,6 +118,7 @@ void toString(double value, char *buffer)
 
 void setupDrone()
 {
+  temp->controlMode = 0;
   String webpage;
   char value[20];
   webpage =  "<html>";
@@ -133,6 +129,7 @@ void setupDrone()
   webpage += "<body>";
   webpage += "<h1>Flight Controller</h1>";
   webpage += "<table style='width:100%'> <tr>";
+  // webpage += "<input type='number' style='width: " + inBreite + "px; height: " + inHoehe + "px' value='" + String(temp->timeNeeded) +"'>";
   webpage += "<form action='/'><input type='submit' value='Back'></form>";
   webpage += "<form action='/save' method='POST'>";
   toString(temp->hl, value);
@@ -147,6 +144,7 @@ void setupDrone()
   webpage += "<input type='submit' value='Senden'></form>";
   webpage += "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update' accept='.bin'><input type='submit' value='Update'></form>";
   webpage += "<form method='GET' action='http://drone.local:8080/webserial'><input type='submit' value='Webserial'></form>";
+  webpage += "<form method='GET' action='/check'><input type='submit' value='Check Motors'></form>";
   webpage += "<form method='POST' action='/reset'><input type='submit' value='RESET'></form>";
   webpage += "</body>";
   webpage += "</html>";
@@ -160,6 +158,7 @@ void root()
     setupDrone();
     return;
   }
+  temp->controlMode = 0;
   String webpage;
   char value[20];
   webpage =  "<html>";
@@ -178,7 +177,7 @@ void root()
 
   webpage += "<form action='/save' method='POST'>";
   toString(temp->Frequenz, value);
-  webpage += "<tr><td>Frequenz[Hz]:</td><td><input type='number' step='0.1' name='Frequenz' style='width: " + inBreite + "px; height: " + inHoehe + "px' value='" + String(value) + "' min='250' max='4000'></td></tr>";
+  webpage += "<tr><td>Frequenz[Hz]:</td><td><input type='number' step='0.1' name='Frequenz' style='width: " + inBreite + "px; height: " + inHoehe + "px' value='" + String(value) + "' min='50' max='4000'></td></tr>";
   toString(temp->degpersec, value);
   webpage += "<tr><td>degpersec:</td><td><input type='number' step='0.001' name='degpersec' style='width: " + inBreite + "px; height: " + inHoehe + "px' value='" + String(value) + "' min='0.001' max='400'></td></tr>";
   toString(temp->pid_max, value);
@@ -213,12 +212,13 @@ void root()
 }
 
 void handleSave() {
+  temp->controlMode = 0;
   if (server.args() > 0 ) { // Arguments were received
     for ( uint8_t i = 0; i < server.args(); i++ ) {
       if (server.argName(i) == "Frequenz")
       {
         temp->Frequenz = server.arg(i).toFloat();
-        temp->durchlaufT = (1.0 / temp->Frequenz) * 1000000.0;
+        temp->durchlaufT = (1000000.0 / temp->Frequenz);
       }
       else if (server.argName(i) == "degpersec")
       {
@@ -285,11 +285,82 @@ void handleSave() {
     }
     saveConfig();
     String webpage;
-    webpage += "<META HTTP-EQUIV='Refresh' CONTENT='1; URL=http://192.168.4.1'>";
+    webpage += "<META HTTP-EQUIV='Refresh' CONTENT='1; URL=/'>";
     webpage += "<html><style> body { margin:50px auto; background-color: #000000; font-size:60px; font-family: Arial, Helvetica, Sans-Serif; Color: white; height: 90%; width: 90%}";
     webpage += "</style><body>Wurde gespeichert!</body></html>";
     server.send(200, "text/html", webpage);
   }
+}
+
+void handleCheck() {
+  if (server.args() > 0 ) // Arguments were received
+  { 
+    String motor = "None";
+    uint8_t perc = 0;
+    for ( uint8_t i = 0; i < server.args(); i++ ) 
+    {
+      if(server.argName(i) == "Motor")
+      {
+        motor = server.arg(i);
+      }
+      else if(server.argName(i) == "Throttle")
+      {
+        perc = server.arg(i).toInt();
+      }
+    }
+
+    if(motor != "None" && perc >= 0 && perc <= 100)
+    {
+      temp->controlMode = 1;
+      if(motor == "FL")
+      {
+        writePWM(temp->vl, 10 * perc + 1000);
+      }
+      else if(motor == "FR")
+      {
+        writePWM(temp->vr, 10 * perc + 1000);
+      }
+      else if(motor == "RR")
+      {
+        writePWM(temp->hr, 10 * perc + 1000);
+      }
+      else if(motor == "RL")
+      {
+        writePWM(temp->hl, 10 * perc + 1000);
+      }
+    }
+  }
+  String webpage;
+  webpage += "<META HTTP-EQUIV='Refresh' CONTENT='1; URL=/check'>";
+  webpage += "<html><body>Success!!!</body></html>";
+  server.send(200, "text/html", webpage);
+}
+
+void checkDrone()
+{
+  String webpage;
+  webpage =  "<html>";
+  webpage += "<head><title>ESP8266 Flight Controller</title>";
+  webpage += "<style> body { margin:0 auto; background-color: #000000; font-size:40px; font-family: Arial, Helvetica, Sans-Serif; Color: white; height: 90%; width: 90%}";
+  webpage += "</style>";
+  webpage += "</head>";
+  webpage += "<body>";
+  webpage += "<h1>Flight Controller</h1>";
+  webpage += "<form action='/'><input type='submit' value='Back'></form>";
+  webpage += "<form action='/check/save' method='POST'>";
+
+  webpage += "<select name='Motor' id='Motor'>";
+  webpage += "<option value='FL'>FL</option>";
+  webpage += "<option value='FR'>FR</option>";
+  webpage += "<option value='RL'>RL</option>";
+  webpage += "<option value='RR'>RR</option>";
+  webpage += "</select>";
+  webpage += "<input type='number' step='1' name='Throttle' style='width: " + inBreite + "px; height: " + inHoehe + "px' value='" + String(0) + "' min='0' max='100'>%";
+
+  webpage += "<input type='submit' value='Senden'></form>";
+  webpage += "</body>";
+  webpage += "</html>";
+  server.send(200, "text/html", webpage); // Send a response to the client asking for input
 }
 
 void setupServer() {
@@ -341,10 +412,13 @@ void setupServer() {
   server.on("/reset", resetDrone);
   /////////////////////////////Setupseite
   server.on("/setup", setupDrone);
+  /////////////////////////////Checkseite
+  server.on("/check", checkDrone);
+  server.on("/check/save", handleCheck);
   /////////////////////////////Server Starten
   server.begin();
-  WebSerial.begin(&serialserver);
-  serialserver.begin();
+  // WebSerial.begin(&serialserver);
+  // serialserver.begin();
 }
 
 void handleServer()
@@ -354,7 +428,6 @@ void handleServer()
   {
     server.handleClient();
     MDNS.update();
-    yield();
   }
   #endif
 }

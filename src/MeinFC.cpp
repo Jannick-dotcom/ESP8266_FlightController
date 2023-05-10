@@ -15,9 +15,13 @@ void setup() {
   {
     IBus.begin(Serial);       //Serielle Schnittstelle wird mit 115200 baud initialisiert
   }
+  else
+  {
+    Serial.begin(115200);
+  }
   ///////////////////////////////////////////////////////
-  setupServer();            //Server vorbereiten und starten -> Server.h
-  SPIFFS.begin();           //Flash Speicher vorbereiten
+  setupServer();            //Server vorbereiten und starten -> Server_Context.h
+  LittleFS.begin();           //Flash Speicher vorbereiten
   loadconfig();             //Konfigurationen aus Flash Speicher Laden
   ////////////////////////////////////////////////////
   /////////////////////////////////////////////Sensoroffsets berechnen
@@ -30,35 +34,28 @@ void setup() {
     pinMode(temp->vr, OUTPUT); //VR
     pinMode(temp->hl, OUTPUT); //HL
     pinMode(temp->vl, OUTPUT); //VL
-    pinMode(temp->camServo, OUTPUT); //CAMSERVO
+    // pinMode(temp->camServo, OUTPUT); //CAMSERVO
     writePWM(temp->hr,1000);
     writePWM(temp->vr,1000);
     writePWM(temp->hl,1000);
     writePWM(temp->vl,1000);
-    startWaveform(16, 1500, 20000 - 1500, 0); //50Hz
+    // startWaveform(16, 1500, 20000 - 1500, 0); //50Hz
 #endif
   }
   ////////////////////////////Erster Schleifendurchlauf festlegen
   if(temp->Frequenz < 250.0) temp->Frequenz = 250.0;
-  temp->durchlaufT = (1.0 / temp->Frequenz) * 1000000.0;
+  temp->durchlaufT = (1e6 / temp->Frequenz);
 }
 
 void loop() {
   while (micros() < temp->nextloop)    //Definierte wiederholrate einhalten
   {
-    yield(); //Feed the Watchdog
   }
   temp->nextloop = micros() + temp->durchlaufT; //nächster Schleifendurchlauf festlegen (in us)
+  yield(); //Feed the Watchdog
   Sensor();
-  if(!temp->debugging) Funk_Lesen();
+  Funk_Lesen();
   berechnen();
-#if defined ESP8266
-  if(temp->Arming < 1500 || temp->debugging) // Wenn motoren nicht gearmt sind dann kümmere dich nur um den Server
-  {
-    server.handleClient();
-    MDNS.update();
-    yield();
-  }
-#endif
-  // debugLoop();
+  handleServer();
+  temp->timeNeeded = temp->durchlaufT - (temp->nextloop - micros());
 }
