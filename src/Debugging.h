@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include "Variables.h"
-#include <WebSerial.h>
+// #include <WebSerial.h>
 
 void debugPrint(float str);
 void debugPrint(String str);
