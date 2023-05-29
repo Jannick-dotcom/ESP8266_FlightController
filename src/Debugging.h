@@ -49,14 +49,10 @@ void debugLoop() {
   debugPrint("LOOP");
 }
 
-void debugPrint(String str)
+template <typename T>
+void debugPrint(T str)
 {
-  Serial.println(str);
-}
-
-void debugPrint(float str)
-{
-  Serial.println(str);
+  if(temp->debugging) Serial.println(str);
 }
 
 #endif
