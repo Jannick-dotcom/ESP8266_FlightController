@@ -24,7 +24,7 @@ ESP8266WebServer server(80);  //Auf Port 80
 #include <Update.h>
 #include <WebServer.h>
 #include "LittleFS.h"
-#include <WebSerial.h>
+#include <ESPmDNS.h>
 WebServer server(80);  //Auf Port 80
 #endif
 
@@ -376,7 +376,9 @@ void setupServer() {
   }, []() {
     HTTPUpload& upload = server.upload();
     if (upload.status == UPLOAD_FILE_START) {
+      #ifdef ESP8266
       WiFiUDP::stopAll();
+      #endif
       uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
       Update.begin(maxSketchSpace);
       debugPrint("Start");
