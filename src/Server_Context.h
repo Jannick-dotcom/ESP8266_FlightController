@@ -100,6 +100,10 @@ bool loadconfig() {
     temp->pid_p_gain_yaw = temp->pid_p_gain_yaw;
     temp->pid_i_gain_yaw = temp->pid_i_gain_yaw / temp->Frequenz;
     temp->pid_d_gain_yaw = temp->pid_d_gain_yaw / temp->Frequenz;
+
+    temp->pitch = StallardosPID(temp->pid_p_gain_pitch, temp->pid_i_gain_pitch, temp->pid_d_gain_pitch);
+    temp->roll = StallardosPID(temp->pid_p_gain_roll, temp->pid_i_gain_roll, temp->pid_d_gain_roll);
+    temp->yaw = StallardosPID(temp->pid_p_gain_yaw, temp->pid_i_gain_yaw, temp->pid_d_gain_yaw);
     return 0;
   }
   else
@@ -284,6 +288,9 @@ void handleSave() {
       }
     }
     saveConfig();
+    temp->pitch = StallardosPID(temp->pid_p_gain_pitch, temp->pid_i_gain_pitch, temp->pid_d_gain_pitch);
+    temp->roll = StallardosPID(temp->pid_p_gain_roll, temp->pid_i_gain_roll, temp->pid_d_gain_roll);
+    temp->yaw = StallardosPID(temp->pid_p_gain_yaw, temp->pid_i_gain_yaw, temp->pid_d_gain_yaw);
     String webpage;
     webpage += "<META HTTP-EQUIV='Refresh' CONTENT='1; URL=/'>";
     webpage += "<html><style> body { margin:50px auto; background-color: #000000; font-size:60px; font-family: Arial, Helvetica, Sans-Serif; Color: white; height: 90%; width: 90%}";
