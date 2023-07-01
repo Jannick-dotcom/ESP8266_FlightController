@@ -108,7 +108,7 @@ bool loadconfig() {
   }
   else
   {
-    temp->HardwareIssues = 2; //First time of Boot or Spiffs broken
+    temp->HardwareIssues = hardwareError((uint8_t)temp->HardwareIssues | MEM); //First time of Boot or Spiffs broken
     LittleFS.format();
     saveConfig();
     return 1;

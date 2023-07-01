@@ -39,7 +39,7 @@ void Funk_Lesen() {
     if ((temp->Received[i] < 1000 && temp->Received[i] != 0) || temp->Received[i] > 2000)  //Wenn kein Signal von Fernsteuerung
     {
       temp->Arming = 1000;
-      temp->HardwareIssues = 3;
+      temp->HardwareIssues = hardwareError((uint8_t)temp->HardwareIssues | RECEIVER);
       return;
     }
   }
@@ -53,6 +53,16 @@ void Funk_Lesen() {
 }
 
 void MPU_getData(void) {
+  if(temp->HardwareIssues | GYRO)
+  {
+    temp->ax = rand() % (uint16_t)(pow(2,16) - 1);//0;
+    temp->ay = rand() % (uint16_t)(pow(2,16) - 1);
+    temp->az = rand() % (uint16_t)(pow(2,16) - 1);
+    temp->gx = rand() % (uint16_t)(pow(2,16) - 1);
+    temp->gy = rand() % (uint16_t)(pow(2,16) - 1);
+    temp->gz = rand() % (uint16_t)(pow(2,16) - 1);
+    return; 
+  }
   Wire.beginTransmission(0x68);                                   //Start communication with the gyro.
   Wire.write(0x3B);                                               //Start reading @ register 43h and auto increment with every read.
   Wire.endTransmission();                                         //End the transmission.
@@ -71,10 +81,11 @@ void MPU_getData(void) {
     temp->gx = 0;
     temp->gy = 0;
     temp->gz = 0;
-    temp->HardwareIssues = 1;
+    temp->HardwareIssues = hardwareError((uint8_t)temp->HardwareIssues | GYRO);
     return;
   }
 
+  temp->HardwareIssues = hardwareError((uint8_t)temp->HardwareIssues & ~GYRO);
   temp->ax = Wire.read() << 8 | Wire.read();                           //Add the low and high byte to the acc_x variable.
   temp->ay = Wire.read() << 8 | Wire.read();                           //Add the low and high byte to the acc_y variable.
   temp->az = Wire.read() << 8 | Wire.read();                           //Add the low and high byte to the acc_z variable.

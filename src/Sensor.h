@@ -100,7 +100,7 @@ void SensorInit() {
   }
   else
   {
-    temp->HardwareIssues = 1; //Irgendwas stimmt mit hasi nicht
+    temp->HardwareIssues = hardwareError((uint8_t)temp->HardwareIssues | GYRO); //Irgendwas stimmt mit hasi nicht
     debugPrint("Gyro not found!!\n");
   }
 }

@@ -4,6 +4,14 @@
 #include "stdint.h"
 #include "StallardOSPID.hpp"
 
+typedef enum hardwareError
+{
+  HW_OK = 0,
+  GYRO = 1,
+  MEM = 2,
+  RECEIVER = 4
+}hardwareError;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Veränderbare Werte
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,7 +78,7 @@ struct vals {
     float axC, ayC, azC;  //Kalibrierwerte Beschleunigungssensor
 
     uint32_t nextloop = 0;
-    uint8_t HardwareIssues = 0; //0->OK, 1->Gyro, 2->Spiffs, 3->Receiver...
+    hardwareError HardwareIssues = HW_OK; //0->OK, 1->Gyro, 2->Spiffs, 3->Receiver...
 
     uint16_t durchlaufT; //us per durchlauf
     uint16_t timeNeeded;
