@@ -151,8 +151,6 @@ void calculate_STOS_pid()
 }
 
 void berechnen() {
-  if(temp->controlMode == 1)
-    return;
   if (temp->Arming < 1500)    //Wenn disarming
   {
     //PID´s zurücksetzen
@@ -185,8 +183,8 @@ void berechnen() {
     temp->gyro_pitch_input = temp->gyroY;
     temp->gyro_yaw_input = temp->gyroZ;
 
-    calculate_pid(); //PID Werte für alle Achsen berechnen
-    // calculate_STOS_pid();
+    // calculate_pid(); //PID Werte für alle Achsen berechnen
+    calculate_STOS_pid();
 
     temp->esc[0] = temp->Throttle + temp->pid_output_pitch + temp->pid_output_roll + temp->pid_output_yaw;//HR
     temp->esc[1] = temp->Throttle - temp->pid_output_pitch + temp->pid_output_roll - temp->pid_output_yaw;//VR
