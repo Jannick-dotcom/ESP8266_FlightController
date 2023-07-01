@@ -52,10 +52,13 @@ void loop() {
   {
   }
   temp->nextloop = micros() + temp->durchlaufT; //nächster Schleifendurchlauf festlegen (in us)
-  yield(); //Feed the Watchdog
   Sensor();
   Funk_Lesen();
   berechnen();
-  handleServer();
-  temp->timeNeeded = temp->durchlaufT - (temp->nextloop - micros());
+  if(temp->Arming > 1500 || temp->debugging)
+  {
+    handleServer();
+    yield(); //Feed the Watchdog
+  }
+  temp->timeNeeded = micros() - (temp->nextloop - temp->durchlaufT);
 }
