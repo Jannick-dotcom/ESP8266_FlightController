@@ -5,9 +5,12 @@
 #include "Variables.h"
 // #include <WebSerial.h>
 
-void debugPrint(float str);
-void debugPrint(String str);
-uint16_t sincelastupdate = 0;
+template <typename T>
+void debugPrint(T str)
+{
+  if(temp->debugging) 
+  Serial.println(str);
+}
 
 void debugReceiver() {
   debugPrint(temp->Throttle);
@@ -47,12 +50,6 @@ void debugSensor()
 
 void debugLoop() {
   debugPrint("LOOP");
-}
-
-template <typename T>
-void debugPrint(T str)
-{
-  if(temp->debugging) Serial.println(str);
 }
 
 #endif
