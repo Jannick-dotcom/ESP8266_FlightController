@@ -36,11 +36,15 @@ void Funk_Lesen() {
   for (uint8_t i = 0; i < 6; i++)
   {
     temp->Received[i] = IBus.readChannel(i);
-    if ((temp->Received[i] < 1000 && temp->Received[i] != 0) || temp->Received[i] > 2000)  //Wenn kein Signal von Fernsteuerung
+    if (temp->Received[i] < 1000 || temp->Received[i] > 2000)  //Wenn kein Signal von Fernsteuerung
     {
       temp->Arming = 1000;
       temp->HardwareIssues = hardwareError((uint8_t)temp->HardwareIssues | RECEIVER);
       return;
+    }
+    else
+    {
+      temp->HardwareIssues = hardwareError((uint8_t)temp->HardwareIssues & ~RECEIVER);
     }
   }
 
@@ -53,7 +57,7 @@ void Funk_Lesen() {
 }
 
 void MPU_getData(void) {
-  if(temp->HardwareIssues | GYRO)
+  if((temp->HardwareIssues & GYRO) && temp->debugging)
   {
     temp->ax = rand() % (uint16_t)(pow(2,16) - 1);//0;
     temp->ay = rand() % (uint16_t)(pow(2,16) - 1);
