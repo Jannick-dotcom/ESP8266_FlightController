@@ -71,7 +71,7 @@ typedef enum hardwareError
 
     uint16_t Received[10];  //Empfangene Werte
     float Throttle, Pitch, Roll, Yaw, Mode, Arming;  //Steuerungswerte von Fernbedienung
-    uint16_t minPulse = 1020; //Minimaler wert der zu den ESC´s gesendet wird wenn die Motoren laufen sollen
+    uint16_t minPulse = 1040; //Minimaler wert der zu den ESC´s gesendet wird wenn die Motoren laufen sollen
     uint16_t esc[4];    //Ausgangswerte zu Motoren
     float gxC, gyC, gzC; //Kalibrierwerte Gyro
     float axC, ayC, azC;  //Kalibrierwerte Beschleunigungssensor

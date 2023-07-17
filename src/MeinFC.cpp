@@ -29,16 +29,16 @@ void setup() {
   if (!debugging)
   {
 #ifdef ESP8266
-    // pinMode(hr, OUTPUT); //HR
-    // pinMode(vr, OUTPUT); //VR
-    // pinMode(hl, OUTPUT); //HL
-    // pinMode(vl, OUTPUT); //VL
+    pinMode(hr, OUTPUT); //HR
+    pinMode(vr, OUTPUT); //VR
+    pinMode(hl, OUTPUT); //HL
+    pinMode(vl, OUTPUT); //VL
     // pinMode(camServo, OUTPUT); //CAMSERVO
     writePWM(hr,2000); //Calibrate ESC's
     writePWM(vr,2000);
     writePWM(hl,2000);
     writePWM(vl,2000);
-    delay(2000);
+    delay(5000);
     writePWM(hr,1000);
     writePWM(vr,1000);
     writePWM(hl,1000);
@@ -66,6 +66,6 @@ void loop() {
   {
     Sensor();
   }
-  //berechnen();
+  berechnen();
   //timeNeeded = micros() - (nextloop - durchlaufT);
 }

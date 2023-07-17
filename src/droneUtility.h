@@ -169,6 +169,7 @@ void calculate_STOS_pid()
 }
 
 void berechnen() {
+  if(controlMode == 1) return; //If checking the motors -> don't overwrite
   if (Arming < 1500)    //Wenn disarming
   {
     //PID´s zurücksetzen
