@@ -23,11 +23,6 @@ void writePWM(uint8_t pin, uint16_t dur)
 #endif
 }
 
-void stopPwM(uint8_t pin)
-{
-  stopWaveform(pin);
-}
-
 void resetDrone()
 {
   debugPrint("RESET!");
