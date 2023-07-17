@@ -15,7 +15,6 @@ typedef enum hardwareError
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Veränderbare Werte
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-struct vals {
     float Frequenz = 250;                      //Sampling Rate Default: 250Hz
 
     float degpersec = 80.0;                    //Maximale Rotationsgeschwindigkeit im Rate Modus [°/s]
@@ -40,8 +39,8 @@ struct vals {
     /////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //Invertvariables
-    int8_t invX = -1;
-    int8_t invY = 1;
+    int8_t invX = 1;
+    int8_t invY = -1;
     int8_t invZ = -1;
 
     uint8_t anzMotoren = 4;
@@ -55,7 +54,7 @@ struct vals {
     uint8_t debugging = 0; //0-> kein Debugging, 1-> Debugging
 
     int16_t ax, ay, az;
-    int16_t gx, gy, gz;
+    int16_t gx, gy, g_z;
     int16_t temperature;
     float anglePitch, angleRoll;
     float gyroX, gyroY, gyroZ;
@@ -82,6 +81,5 @@ struct vals {
 
     uint16_t durchlaufT; //us per durchlauf
     uint16_t timeNeeded;
-};
 
 #endif

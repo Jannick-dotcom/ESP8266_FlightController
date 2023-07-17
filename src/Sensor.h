@@ -6,36 +6,36 @@
 void Sensor() {
   MPU_getData();
 
-  temp->gx = temp->gx - temp->gxC;
-  temp->gy= temp->gy- temp->gyC;
-  temp->gz = temp->gz - temp->gzC;
+  gx = gx - gxC;
+  gy= gy- gyC;
+  g_z = g_z - gzC;
 
-  temp->ax = temp->ax - temp->axC;    //Kalibrierwerte Beschl. Sensor
-  temp->ay = temp->ay - temp->ayC;
-  temp->az = temp->az - temp->azC;
+  ax = ax - axC;    //Kalibrierwerte Beschl. Sensor
+  ay = ay - ayC;
+  az = az - azC;
 
-  temp->gyroX = float(temp->gx / 65.5) * temp->invX;
-  temp->gyroY = float(temp->gy/ 65.5) * temp->invY;
-  temp->gyroZ = float(temp->gz / 65.5) * temp->invZ;
+  gyroX = float(gx / 65.5) * invX;
+  gyroY = float(gy/ 65.5) * invY;
+  gyroZ = float(g_z / 65.5) * invZ;
   
   //Gyro angle calculations
-  temp->anglePitch += temp->gyroY / temp->Frequenz;                                  //Calculate the traveled pitch angle and add this to the angle_pitch variable.
-  temp->angleRoll += temp->gyroX / temp->Frequenz;                                    //Calculate the traveled roll angle and add this to the angle_roll variable.
+  anglePitch += gyroY / Frequenz;                                  //Calculate the traveled pitch angle and add this to the angle_pitch variable.
+  angleRoll += gyroX / Frequenz;                                    //Calculate the traveled roll angle and add this to the angle_roll variable.
 
-  temp->anglePitch -= temp->angleRoll * sin(temp->gyroZ / temp->Frequenz * (M_PI / 180.0));                //If the IMU has yawed transfer the roll angle to the pitch angle.
-  temp->angleRoll += temp->anglePitch * sin(temp->gyroZ / temp->Frequenz * (M_PI / 180.0));                //If the IMU has yawed transfer the pitch angle to the roll angle.
+  anglePitch -= angleRoll * sin(gyroZ / Frequenz * (M_PI / 180.0));                //If the IMU has yawed transfer the roll angle to the pitch angle.
+  angleRoll += anglePitch * sin(gyroZ / Frequenz * (M_PI / 180.0));                //If the IMU has yawed transfer the pitch angle to the roll angle.
 
   //Accelerometer angle calculations
-  temp->acc_total_vector = sqrt((temp->ax * temp->ax) + (temp->ay * temp->ay) + (temp->az * temp->az)); //Calculate the total accelerometer vector.
+  acc_total_vector = sqrt((ax * ax) + (ay * ay) + (az * az)); //Calculate the total accelerometer vector.
 
-  if (abs(temp->ay) < temp->acc_total_vector) {                                      //Prevent the asin function to produce a NaN
-    temp->accY = asin((float)temp->ay / temp->acc_total_vector) * 57.296;       //Calculate the pitch angle.
+  if (abs(ay) < acc_total_vector) {                                      //Prevent the asin function to produce a NaN
+    accY = asin((float)ay / acc_total_vector) * 57.296;       //Calculate the pitch angle.
   }
-  if (abs(temp->ax) < temp->acc_total_vector) {                                      //Prevent the asin function to produce a NaN
-    temp->accX = asin((float)temp->ax / temp->acc_total_vector) * -57.296;       //Calculate the roll angle.
+  if (abs(ax) < acc_total_vector) {                                      //Prevent the asin function to produce a NaN
+    accX = asin((float)ax / acc_total_vector) * -57.296;       //Calculate the roll angle.
   }
-  // temp->anglePitch = (temp->anglePitch * 0.9996) + (temp->accY * 0.0004);
-  // temp->angleRoll = (temp->angleRoll * 0.9996) + (temp->accX * 0.0004);
+  // anglePitch = (anglePitch * 0.9996) + (accY * 0.0004);
+  // angleRoll = (angleRoll * 0.9996) + (accX * 0.0004);
 }
 
 void SensorInit() {
@@ -71,36 +71,36 @@ void SensorInit() {
     for (uint8_t b = 0; b < 10; b++) {
       for (uint16_t i = 0; i < 1000; i++) { //Sensor kalibrieren
         MPU_getData();
-        temp->gxC += temp->gx;
-        temp->gyC += temp->gy;
-        temp->gzC += temp->gz;
-        temp->axC += temp->ax;
-        temp->ayC += temp->ay;
-        temp->azC += temp->az;
+        gxC += gx;
+        gyC += gy;
+        gzC += g_z;
+        axC += ax;
+        ayC += ay;
+        azC += az;
         yield();
       }
     }
-    temp->gxC /= 10000.0;
-    temp->gyC /= 10000.0;
-    temp->gzC /= 10000.0;
-    temp->axC /= 10000.0;
-    temp->ayC /= 10000.0;
-    temp->azC /= 10000.0;
+    gxC /= 10000.0;
+    gyC /= 10000.0;
+    gzC /= 10000.0;
+    axC /= 10000.0;
+    ayC /= 10000.0;
+    azC /= 10000.0;
     delay(10);
 
     //Accelerometer angle calculations
-    temp->acc_total_vector = sqrt((temp->ax * temp->ax) + (temp->ay * temp->ay) + (temp->az * temp->az)); //Calculate the total accelerometer vector.
+    acc_total_vector = sqrt((ax * ax) + (ay * ay) + (az * az)); //Calculate the total accelerometer vector.
 
-    if (abs(temp->ax) < temp->acc_total_vector) {                                      //Prevent the asin function to produce a NaN
-      temp->anglePitch = asin((float)temp->ax / temp->acc_total_vector) * 57.296;       //Calculate the pitch angle.
+    if (abs(ax) < acc_total_vector) {                                      //Prevent the asin function to produce a NaN
+      anglePitch = asin((float)ax / acc_total_vector) * 57.296;       //Calculate the pitch angle.
     }
-    if (abs(temp->ay) < temp->acc_total_vector) {                                      //Prevent the asin function to produce a NaN
-      temp->angleRoll = asin((float)temp->ay / temp->acc_total_vector) * -57.296;       //Calculate the roll angle.
+    if (abs(ay) < acc_total_vector) {                                      //Prevent the asin function to produce a NaN
+      angleRoll = asin((float)ay / acc_total_vector) * -57.296;       //Calculate the roll angle.
     }
   }
   else
   {
-    temp->HardwareIssues = hardwareError((uint8_t)temp->HardwareIssues | GYRO); //Irgendwas stimmt mit hasi nicht
+    HardwareIssues = hardwareError((uint8_t)HardwareIssues | GYRO); //Irgendwas stimmt mit hasi nicht
     debugPrint("Gyro not found!!\n");
   }
 }

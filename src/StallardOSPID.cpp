@@ -58,3 +58,9 @@ double StallardosPID::calculate_pid(double setpoint, double input)
     
     return pid_output;
 }
+
+void StallardosPID::reset()
+{
+    this->pid_i_mem = 0;
+    this->pid_last_d_error = 0;
+}

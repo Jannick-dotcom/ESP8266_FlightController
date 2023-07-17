@@ -28,9 +28,9 @@ void FlySkyIBus::loop(void)
 {
 	if(millis() - last > 30)
 	{
-		for (uint8_t i = 1; i < PROTOCOL_CHANNELS * 2 + 1; i += 2)
+		for (uint8_t i = 0; i < PROTOCOL_CHANNELS; i++)
 		{
-			channel[i / 2] = 0;
+			channel[i] = 0;
 		}
 	}
 	while (stream->available() > 0)
@@ -99,6 +99,7 @@ void FlySkyIBus::loop(void)
 			
 			break;
 		}
+		yield();
 	}
 }
 

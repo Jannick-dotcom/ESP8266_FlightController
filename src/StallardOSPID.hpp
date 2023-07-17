@@ -14,6 +14,7 @@ public:
     StallardosPID();
     StallardosPID(double p_gain, double i_gain, double d_gain);
     double calculate_pid(double setpoint, double input);
+    void reset();
 };
 
 #endif

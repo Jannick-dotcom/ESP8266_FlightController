@@ -1,5 +1,4 @@
 #include "Variables.h"
-struct vals *temp;
 
 #include "Server_Context.h"
 #include "Debugging.h"
@@ -10,8 +9,8 @@ struct vals *temp;
 #include "FlySkyIBus.h"
 
 void setup() {
-  temp = new struct vals;
-  if(!temp->debugging)
+  //temp = new struct vals;
+  if(!debugging)
   {
     IBus.begin(Serial);       //Serielle Schnittstelle wird mit 115200 baud initialisiert
   }
@@ -27,33 +26,38 @@ void setup() {
   /////////////////////////////////////////////Sensoroffsets berechnen
   SensorInit();  //MPU6050 kalibrieren. Drohne nicht bewegen!!
   ////////////////////////////Servo und 4 Motoren ansprechen
-  if (!temp->debugging)
+  if (!debugging)
   {
 #ifdef ESP8266
-    pinMode(temp->hr, OUTPUT); //HR
-    pinMode(temp->vr, OUTPUT); //VR
-    pinMode(temp->hl, OUTPUT); //HL
-    pinMode(temp->vl, OUTPUT); //VL
-    // pinMode(temp->camServo, OUTPUT); //CAMSERVO
-    writePWM(temp->hr,1000);
-    writePWM(temp->vr,1000);
-    writePWM(temp->hl,1000);
-    writePWM(temp->vl,1000);
+    // pinMode(hr, OUTPUT); //HR
+    // pinMode(vr, OUTPUT); //VR
+    // pinMode(hl, OUTPUT); //HL
+    // pinMode(vl, OUTPUT); //VL
+    // pinMode(camServo, OUTPUT); //CAMSERVO
+    writePWM(hr,2000); //Calibrate ESC's
+    writePWM(vr,2000);
+    writePWM(hl,2000);
+    writePWM(vl,2000);
+    delay(2000);
+    writePWM(hr,1000);
+    writePWM(vr,1000);
+    writePWM(hl,1000);
+    writePWM(vl,1000);
     // startWaveform(16, 1500, 20000 - 1500, 0); //50Hz
 #endif
   }
   ////////////////////////////Erster Schleifendurchlauf festlegen
-  if(temp->Frequenz < 250.0) temp->Frequenz = 250.0;
-  temp->durchlaufT = (1e6 / temp->Frequenz);
+  if(Frequenz < 250.0) Frequenz = 250.0;
+  durchlaufT = (1e6 / Frequenz);
 }
 
 void loop() {
-  while (micros() < temp->nextloop)    //Definierte wiederholrate einhalten
+  while (micros() < nextloop)    //Definierte wiederholrate einhalten
   {
   }
-  temp->nextloop = micros() + temp->durchlaufT; //nächster Schleifendurchlauf festlegen (in us)
+  nextloop = micros() + durchlaufT; //nächster Schleifendurchlauf festlegen (in us)
   Funk_Lesen();
-  if(temp->Arming < 1500 || temp->debugging)
+  if(Arming < 1500 || debugging)
   {
     handleServer();
     yield(); //Feed the Watchdog
@@ -62,6 +66,6 @@ void loop() {
   {
     Sensor();
   }
-  berechnen();
-  temp->timeNeeded = micros() - (temp->nextloop - temp->durchlaufT);
+  //berechnen();
+  //timeNeeded = micros() - (nextloop - durchlaufT);
 }

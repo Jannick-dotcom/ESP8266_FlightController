@@ -14,13 +14,17 @@
 void writePWM(uint8_t pin, uint16_t dur)
 {
 #ifdef ESP8266
-  if (!temp->debugging)
+  if (!debugging)
     startWaveform(pin, dur, 4000 - dur);
 #endif
 #ifdef ESP32
 
 #endif
+}
 
+void stopPwM(uint8_t pin)
+{
+  stopWaveform(pin);
 }
 
 void resetDrone()
@@ -31,40 +35,40 @@ void resetDrone()
 }
 
 void Funk_Lesen() {
-  if(temp->debugging) return;
+  if(debugging) return;
   IBus.loop();
   for (uint8_t i = 0; i < 6; i++)
   {
-    temp->Received[i] = IBus.readChannel(i);
-    if (temp->Received[i] < 1000 || temp->Received[i] > 2000)  //Wenn kein Signal von Fernsteuerung
+    Received[i] = IBus.readChannel(i);
+    if (Received[i] < 1000 || Received[i] > 2000)  //Wenn kein Signal von Fernsteuerung
     {
-      temp->Arming = 1000;
-      temp->HardwareIssues = hardwareError((uint8_t)temp->HardwareIssues | RECEIVER);
+      Arming = 1000;
+      HardwareIssues = hardwareError((uint8_t)HardwareIssues | RECEIVER);
       return;
     }
     else
     {
-      temp->HardwareIssues = hardwareError((uint8_t)temp->HardwareIssues & ~RECEIVER);
+      HardwareIssues = hardwareError((uint8_t)HardwareIssues & ~RECEIVER);
     }
   }
-
-  temp->Roll = temp->Received[0];
-  temp->Pitch = temp->Received[1];
-  temp->Throttle = temp->Received[2];
-  temp->Yaw = temp->Received[3];
-  temp->Arming = temp->Received[4];
-  temp->Mode = temp->Received[5];
+  debugReceiver();
+  Roll = Received[0];
+  Pitch = Received[1];
+  Throttle = Received[2];
+  Yaw = Received[3];
+  Arming = Received[4];
+  Mode = Received[5];
 }
 
 void MPU_getData(void) {
-  if((temp->HardwareIssues & GYRO) && temp->debugging)
+  if((HardwareIssues & GYRO) && debugging)
   {
-    temp->ax = rand() % (uint16_t)(pow(2,16) - 1);//0;
-    temp->ay = rand() % (uint16_t)(pow(2,16) - 1);
-    temp->az = rand() % (uint16_t)(pow(2,16) - 1);
-    temp->gx = rand() % (uint16_t)(pow(2,16) - 1);
-    temp->gy = rand() % (uint16_t)(pow(2,16) - 1);
-    temp->gz = rand() % (uint16_t)(pow(2,16) - 1);
+    ax = rand() % (uint16_t)(pow(2,16) - 1);//0;
+    ay = rand() % (uint16_t)(pow(2,16) - 1);
+    az = rand() % (uint16_t)(pow(2,16) - 1);
+    gx = rand() % (uint16_t)(pow(2,16) - 1);
+    gy = rand() % (uint16_t)(pow(2,16) - 1);
+    g_z = rand() % (uint16_t)(pow(2,16) - 1);
     return; 
   }
   Wire.beginTransmission(0x68);                                   //Start communication with the gyro.
@@ -72,31 +76,31 @@ void MPU_getData(void) {
   Wire.endTransmission();                                         //End the transmission.
   Wire.requestFrom(0x68, 14);                                     //Request 14 bytes from the gyro.
   uint16_t timer = micros();                                      //Save the actual timestamp
-  while (Wire.available() < 14 && (micros() - timer < temp->durchlaufT))//Wait until the 14 bytes are received. and check if the Gyro doesn´t response
+  while (Wire.available() < 14 && (micros() - timer < durchlaufT))//Wait until the 14 bytes are received. and check if the Gyro doesn´t response
   {
     yield();
   }
 
   if (Wire.available() < 14)                                     //If the Gyro didn´t response everything expected
   {
-    temp->ax = 0;
-    temp->ay = 0;
-    temp->az = 0;
-    temp->gx = 0;
-    temp->gy = 0;
-    temp->gz = 0;
-    temp->HardwareIssues = hardwareError((uint8_t)temp->HardwareIssues | GYRO);
+    ax = 0;
+    ay = 0;
+    az = 0;
+    gx = 0;
+    gy = 0;
+    g_z = 0;
+    HardwareIssues = hardwareError((uint8_t)HardwareIssues | GYRO);
     return;
   }
 
-  temp->HardwareIssues = hardwareError((uint8_t)temp->HardwareIssues & ~GYRO);
-  temp->ax = Wire.read() << 8 | Wire.read();                           //Add the low and high byte to the acc_x variable.
-  temp->ay = Wire.read() << 8 | Wire.read();                           //Add the low and high byte to the acc_y variable.
-  temp->az = Wire.read() << 8 | Wire.read();                           //Add the low and high byte to the acc_z variable.
-  temp->temperature = Wire.read() << 8 | Wire.read();                  //Add the low and high byte to the temperature variable.
-  temp->gx = Wire.read() << 8 | Wire.read();                           //Read high and low part of the angular data.
-  temp->gy = Wire.read() << 8 | Wire.read();                           //Read high and low part of the angular data.
-  temp->gz = Wire.read() << 8 | Wire.read();                           //Read high and low part of the angular data.
+  HardwareIssues = hardwareError((uint8_t)HardwareIssues & ~GYRO);
+  ax = Wire.read() << 8 | Wire.read();                           //Add the low and high byte to the acc_x variable.
+  ay = Wire.read() << 8 | Wire.read();                           //Add the low and high byte to the acc_y variable.
+  az = Wire.read() << 8 | Wire.read();                           //Add the low and high byte to the acc_z variable.
+  temperature = Wire.read() << 8 | Wire.read();                  //Add the low and high byte to the temperature variable.
+  gx = Wire.read() << 8 | Wire.read();                           //Read high and low part of the angular data.
+  gy = Wire.read() << 8 | Wire.read();                           //Read high and low part of the angular data.
+  g_z = Wire.read() << 8 | Wire.read();                           //Read high and low part of the angular data.
 }
 
 bool ping_gyro(void) {
@@ -122,107 +126,110 @@ bool ping_gyro(void) {
 void calculate_pid() {
   //Roll calculations
   float pid_error_temp;
-  pid_error_temp = temp->gyro_roll_input - temp->pid_roll_setpoint;
-  temp->pid_i_mem_roll += temp->pid_i_gain_roll * pid_error_temp;
-  if (temp->pid_i_mem_roll > temp->pid_max) temp->pid_i_mem_roll = temp->pid_max;
-  else if (temp->pid_i_mem_roll < temp->pid_max * -1) temp->pid_i_mem_roll = temp->pid_max * -1;
+  pid_error_temp = gyro_roll_input - pid_roll_setpoint;
+  pid_i_mem_roll += pid_i_gain_roll * pid_error_temp;
+  if (pid_i_mem_roll > pid_max) pid_i_mem_roll = pid_max;
+  else if (pid_i_mem_roll < pid_max * -1) pid_i_mem_roll = pid_max * -1;
 
-  temp->pid_output_roll = temp->pid_p_gain_roll * pid_error_temp + temp->pid_i_mem_roll + temp->pid_d_gain_roll * (pid_error_temp - temp->pid_last_roll_d_error);
-  if (temp->pid_output_roll > temp->pid_max) temp->pid_output_roll = temp->pid_max;
-  else if (temp->pid_output_roll < temp->pid_max * -1) temp->pid_output_roll = temp->pid_max * -1;
+  pid_output_roll = pid_p_gain_roll * pid_error_temp + pid_i_mem_roll + pid_d_gain_roll * (pid_error_temp - pid_last_roll_d_error);
+  if (pid_output_roll > pid_max) pid_output_roll = pid_max;
+  else if (pid_output_roll < pid_max * -1) pid_output_roll = pid_max * -1;
 
-  temp->pid_last_roll_d_error = pid_error_temp;
+  pid_last_roll_d_error = pid_error_temp;
 
   //Pitch calculations
-  pid_error_temp = temp->gyro_pitch_input - temp->pid_pitch_setpoint;
-  temp->pid_i_mem_pitch += temp->pid_i_gain_pitch * pid_error_temp;
-  if (temp->pid_i_mem_pitch > temp->pid_max) temp->pid_i_mem_pitch = temp->pid_max;
-  else if (temp->pid_i_mem_pitch < temp->pid_max * -1) temp->pid_i_mem_pitch = temp->pid_max * -1;
+  pid_error_temp = gyro_pitch_input - pid_pitch_setpoint;
+  pid_i_mem_pitch += pid_i_gain_pitch * pid_error_temp;
+  if (pid_i_mem_pitch > pid_max) pid_i_mem_pitch = pid_max;
+  else if (pid_i_mem_pitch < pid_max * -1) pid_i_mem_pitch = pid_max * -1;
 
-  temp->pid_output_pitch = temp->pid_p_gain_pitch * pid_error_temp + temp->pid_i_mem_pitch + temp->pid_d_gain_pitch * (pid_error_temp - temp->pid_last_pitch_d_error);
-  if (temp->pid_output_pitch > temp->pid_max) temp->pid_output_pitch = temp->pid_max;
-  else if (temp->pid_output_pitch < temp->pid_max * -1) temp->pid_output_pitch = temp->pid_max * -1;
+  pid_output_pitch = pid_p_gain_pitch * pid_error_temp + pid_i_mem_pitch + pid_d_gain_pitch * (pid_error_temp - pid_last_pitch_d_error);
+  if (pid_output_pitch > pid_max) pid_output_pitch = pid_max;
+  else if (pid_output_pitch < pid_max * -1) pid_output_pitch = pid_max * -1;
 
-  temp->pid_last_pitch_d_error = pid_error_temp;
+  pid_last_pitch_d_error = pid_error_temp;
 
   //Yaw calculations
-  pid_error_temp = temp->gyro_yaw_input - temp->pid_yaw_setpoint;
-  temp->pid_i_mem_yaw += temp->pid_i_gain_yaw * pid_error_temp;
-  if (temp->pid_i_mem_yaw > temp->pid_max) temp->pid_i_mem_yaw = temp->pid_max;
-  else if (temp->pid_i_mem_yaw < temp->pid_max * -1) temp->pid_i_mem_yaw = temp->pid_max * -1;
+  pid_error_temp = gyro_yaw_input - pid_yaw_setpoint;
+  pid_i_mem_yaw += pid_i_gain_yaw * pid_error_temp;
+  if (pid_i_mem_yaw > pid_max) pid_i_mem_yaw = pid_max;
+  else if (pid_i_mem_yaw < pid_max * -1) pid_i_mem_yaw = pid_max * -1;
 
-  temp->pid_output_yaw = temp->pid_p_gain_yaw * pid_error_temp + temp->pid_i_mem_yaw + temp->pid_d_gain_yaw * (pid_error_temp - temp->pid_last_yaw_d_error);
-  if (temp->pid_output_yaw > temp->pid_max) temp->pid_output_yaw = temp->pid_max;
-  else if (temp->pid_output_yaw < temp->pid_max * -1) temp->pid_output_yaw = temp->pid_max * -1;
+  pid_output_yaw = pid_p_gain_yaw * pid_error_temp + pid_i_mem_yaw + pid_d_gain_yaw * (pid_error_temp - pid_last_yaw_d_error);
+  if (pid_output_yaw > pid_max) pid_output_yaw = pid_max;
+  else if (pid_output_yaw < pid_max * -1) pid_output_yaw = pid_max * -1;
 
-  temp->pid_last_yaw_d_error = pid_error_temp;
+  pid_last_yaw_d_error = pid_error_temp;
 }
 
 void calculate_STOS_pid()
 {
-  temp->pid_output_pitch = temp->pitch.calculate_pid(temp->pid_pitch_setpoint, temp->gyro_pitch_input);
-  temp->pid_output_roll = temp->roll.calculate_pid(temp->pid_roll_setpoint, temp->gyro_roll_input);
-  temp->pid_output_yaw = temp->yaw.calculate_pid(temp->pid_yaw_setpoint, temp->gyro_yaw_input);
+  pid_output_pitch = pitch.calculate_pid(pid_pitch_setpoint, gyro_pitch_input);
+  pid_output_roll = roll.calculate_pid(pid_roll_setpoint, gyro_roll_input);
+  pid_output_yaw = yaw.calculate_pid(pid_yaw_setpoint, gyro_yaw_input);
 }
 
 void berechnen() {
-  if (temp->Arming < 1500)    //Wenn disarming
+  if (Arming < 1500)    //Wenn disarming
   {
     //PID´s zurücksetzen
-    temp->pid_i_mem_roll = 0;
-    temp->pid_last_roll_d_error = 0;
-    temp->pid_i_mem_pitch = 0;
-    temp->pid_last_pitch_d_error = 0;
-    temp->pid_i_mem_yaw = 0;
-    temp->pid_last_yaw_d_error = 0;
-    //PWM für temp->esc´s aktualisieren
-    writePWM(temp->hr, 1000);
-    writePWM(temp->vr, 1000);
-    writePWM(temp->hl, 1000);
-    writePWM(temp->vl, 1000);
+    pid_i_mem_roll = 0;
+    pid_last_roll_d_error = 0;
+    pid_i_mem_pitch = 0;
+    pid_last_pitch_d_error = 0;
+    pid_i_mem_yaw = 0;
+    pid_last_yaw_d_error = 0;
+    pitch.reset();
+    roll.reset();
+    yaw.reset();
+    //PWM für esc´s aktualisieren
+    writePWM(hr, 1000);
+    writePWM(vr, 1000);
+    writePWM(hl, 1000);
+    writePWM(vl, 1000);
   }
   else
   {
-    temp->Throttle = (((temp->Throttle - 1000) / 1000.0) * (1000.0 - temp->pid_max)) + 1000; //Ändern des maximalen Throttle punkts auf 1800 damit auch bei vollem schub noch manöver möglich sind
+    Throttle = (((Throttle - 1000) / 1000.0) * (1000.0 - pid_max)) + 1000; //Ändern des maximalen Throttle punkts auf 1800 damit auch bei vollem schub noch manöver möglich sind
 
-    temp->pid_roll_setpoint = (temp->Roll - 1500) / 500.0 * temp->degpersec; //Eingabe auf +-500 verschieben -> dann in °/s umrechnen
-    temp->pid_pitch_setpoint = (temp->Pitch - 1500) / 500.0 * temp->degpersec; //Wird wahrscheinlich nicht mit autolevelmode funktionieren!!!!!!!!!!!!!!
-    temp->pid_yaw_setpoint = (temp->Yaw - 1500) / 500.0 * temp->degpersec;
+    pid_roll_setpoint = (Roll - 1500) / 500.0 * degpersec; //Eingabe auf +-500 verschieben -> dann in °/s umrechnen
+    pid_pitch_setpoint = (Pitch - 1500) / 500.0 * degpersec; //Wird wahrscheinlich nicht mit autolevelmode funktionieren!!!!!!!!!!!!!!
+    pid_yaw_setpoint = (Yaw - 1500) / 500.0 * degpersec;
 
-    if (temp->Mode > 1300 && temp->Mode <= 2000) {      //Autolevel; Funktioniert das??????????????????
-      temp->pid_roll_setpoint = temp->Roll - (temp->angleRoll * 15.0);
-      temp->pid_pitch_setpoint = temp->Pitch - (temp->anglePitch * 15.0);
+    if (Mode > 1300 && Mode <= 2000) {      //Autolevel; Funktioniert das??????????????????
+      pid_roll_setpoint = Roll - (angleRoll * 15.0);
+      pid_pitch_setpoint = Pitch - (anglePitch * 15.0);
     }
 
-    temp->gyro_roll_input = temp->gyroX;
-    temp->gyro_pitch_input = temp->gyroY;
-    temp->gyro_yaw_input = temp->gyroZ;
+    gyro_roll_input = gyroX;
+    gyro_pitch_input = gyroY;
+    gyro_yaw_input = gyroZ;
 
     // calculate_pid(); //PID Werte für alle Achsen berechnen
     calculate_STOS_pid();
 
-    temp->esc[0] = temp->Throttle + temp->pid_output_pitch + temp->pid_output_roll + temp->pid_output_yaw;//HR
-    temp->esc[1] = temp->Throttle - temp->pid_output_pitch + temp->pid_output_roll - temp->pid_output_yaw;//VR
-    temp->esc[2] = temp->Throttle + temp->pid_output_pitch - temp->pid_output_roll - temp->pid_output_yaw;//HL
-    temp->esc[3] = temp->Throttle - temp->pid_output_pitch - temp->pid_output_roll + temp->pid_output_yaw;//VL
+    esc[0] = Throttle + pid_output_pitch + pid_output_roll + pid_output_yaw;//HR
+    esc[1] = Throttle - pid_output_pitch + pid_output_roll - pid_output_yaw;//VR
+    esc[2] = Throttle + pid_output_pitch - pid_output_roll - pid_output_yaw;//HL
+    esc[3] = Throttle - pid_output_pitch - pid_output_roll + pid_output_yaw;//VL
 
-    for (uint8_t i = 0; i < sizeof(temp->esc) / sizeof(uint16_t); i++)
+    for (uint8_t i = 0; i < sizeof(esc) / sizeof(uint16_t); i++)
     {
-      if (temp->esc[i] > 2000)        //Ausgang auf 2000 limitieren
+      if (esc[i] > 2000)        //Ausgang auf 2000 limitieren
       {
-        temp->esc[i] = 2000;
+        esc[i] = 2000;
       }
-      else if (temp->esc[i] < temp->minPulse)   //Motoren am laufen halten wenn minimaler schub
+      else if (esc[i] < minPulse)   //Motoren am laufen halten wenn minimaler schub
       {
-        temp->esc[i] = temp->minPulse;
+        esc[i] = minPulse;
       }
     }
 
     //PWM für esc´s aktualisieren
-    writePWM(temp->hr, temp->esc[0]);
-    writePWM(temp->vr, temp->esc[1]);
-    writePWM(temp->hl, temp->esc[2]);
-    writePWM(temp->vl, temp->esc[3]);
+    writePWM(hr, esc[0]);
+    writePWM(vr, esc[1]);
+    writePWM(hl, esc[2]);
+    writePWM(vl, esc[3]);
     //writePWM(camServo,Campitch);
     // startWaveform(16, Campitch, 20000 - Campitch, 0);
   }
