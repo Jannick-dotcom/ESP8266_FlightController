@@ -3,7 +3,8 @@
 
 #include <Wire.h>
 #include "Variables.h"
-#include "FlySkyIBus.h"
+#include "IBusBM.h"
+IBusBM IBus;
 #include "Debugging.h"
 #include "StallardOSPID.hpp"
 
@@ -34,6 +35,7 @@ void resetDrone()
   yield();
 }
 
+uint16_t xx = 0;
 void Funk_Lesen() {
   if(debugging) return;
   IBus.loop();
@@ -51,13 +53,15 @@ void Funk_Lesen() {
       HardwareIssues = hardwareError((uint8_t)HardwareIssues & ~RECEIVER);
     }
   }
-  debugReceiver();
   Roll = Received[0];
   Pitch = Received[1];
   Throttle = Received[2];
   Yaw = Received[3];
   Arming = Received[4];
   Mode = Received[5];
+  debugPrint(xx++);
+  debugPrint(" :");
+  debugReceiver();
 }
 
 void MPU_getData(void) {

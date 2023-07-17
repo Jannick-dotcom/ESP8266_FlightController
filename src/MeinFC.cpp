@@ -6,7 +6,7 @@
 #include "Sensor.h"
 
 #include <Wire.h>
-#include "FlySkyIBus.h"
+#include "IBusBM.h"
 
 void setup() {
   //temp = new struct vals;
