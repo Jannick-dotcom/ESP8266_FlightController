@@ -28,11 +28,11 @@ void debugReceiver() {
 }
 
 void debugPID() {
-  debugPrint("Roll_Output\tPitch_Output\tYaw_Output\n");
+  debugPrint("Roll_Output: ");
   debugPrint(pid_output_roll);
-  debugPrint("\t");
+  debugPrint("\tPitch_Output: ");
   debugPrint(pid_output_pitch);
-  debugPrint("\t");
+  debugPrint("\tYaw_Output: ");
   debugPrint(pid_output_yaw);
   debugPrint("\n");
 }
