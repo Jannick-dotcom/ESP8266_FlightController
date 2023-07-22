@@ -38,7 +38,7 @@ void setup() {
     writePWM(vr,2000);
     writePWM(hl,2000);
     writePWM(vl,2000);
-    delay(5000);
+    delay(10000);
     writePWM(hr,1000);
     writePWM(vr,1000);
     writePWM(hl,1000);

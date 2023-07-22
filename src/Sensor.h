@@ -77,8 +77,8 @@ void SensorInit() {
         axC += ax;
         ayC += ay;
         azC += az;
-        yield();
       }
+      yield();
     }
     gxC /= 10000.0;
     gyC /= 10000.0;

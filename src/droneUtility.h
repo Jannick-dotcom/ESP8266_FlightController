@@ -37,6 +37,10 @@ void Funk_Lesen() {
   for (uint8_t i = 0; i < 6; i++)
   {
     Received[i] = IBus.readChannel(i);
+    if(abs(1500 - Received[i]) < 5)
+    {
+      Received[i] = 1500;
+    }
     if (Received[i] < 1000 || Received[i] > 2000)  //Wenn kein Signal von Fernsteuerung
     {
       Arming = 1000;
@@ -54,8 +58,6 @@ void Funk_Lesen() {
   Yaw = Received[3];
   Arming = Received[4];
   Mode = Received[5];
-  debugPrint(xx++);
-  debugPrint(" :");
   debugReceiver();
 }
 
@@ -192,9 +194,9 @@ void berechnen() {
   {
     Throttle = (((Throttle - 1000) / 1000.0) * (1000.0 - pid_max)) + 1000; //Ändern des maximalen Throttle punkts auf 1800 damit auch bei vollem schub noch manöver möglich sind
 
-    pid_roll_setpoint = (Roll - 1500) / 500.0 * degpersec; //Eingabe auf +-500 verschieben -> dann in °/s umrechnen
-    pid_pitch_setpoint = (Pitch - 1500) / 500.0 * degpersec; //Wird wahrscheinlich nicht mit autolevelmode funktionieren!!!!!!!!!!!!!!
-    pid_yaw_setpoint = (Yaw - 1500) / 500.0 * degpersec;
+    pid_roll_setpoint = ((Roll - 1500) / 500.0) * degpersec; //Eingabe auf +-500 verschieben -> dann in °/s umrechnen
+    pid_pitch_setpoint = ((Pitch - 1500) / 500.0) * degpersec; //Wird wahrscheinlich nicht mit autolevelmode funktionieren!!!!!!!!!!!!!!
+    pid_yaw_setpoint = ((Yaw - 1500) / 500.0) * degpersec;
 
     if (Mode > 1300 && Mode <= 2000) {      //Autolevel; Funktioniert das??????????????????
       pid_roll_setpoint = Roll - (angleRoll * 15.0);
@@ -213,7 +215,7 @@ void berechnen() {
     esc[2] = Throttle + pid_output_pitch - pid_output_roll - pid_output_yaw;//HL
     esc[3] = Throttle - pid_output_pitch - pid_output_roll + pid_output_yaw;//VL
 
-    for (uint8_t i = 0; i < sizeof(esc) / sizeof(uint16_t); i++)
+    for (uint8_t i = 0; i < sizeof(esc) / sizeof(esc[0]); i++)
     {
       if (esc[i] > 2000)        //Ausgang auf 2000 limitieren
       {
@@ -224,6 +226,7 @@ void berechnen() {
         esc[i] = minPulse;
       }
     }
+    debugPWM();
 
     //PWM für esc´s aktualisieren
     writePWM(hr, esc[0]);

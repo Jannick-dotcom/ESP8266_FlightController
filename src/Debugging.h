@@ -27,6 +27,19 @@ void debugReceiver() {
   debugPrint("\n");
 }
 
+void debugPWM()
+{
+  for(uint8_t i = 0; i < sizeof(esc)/ sizeof(esc[0]); i++)
+  {
+    debugPrint("esc[");
+    debugPrint(i);
+    debugPrint("]: ");
+    debugPrint(esc[i]);
+    debugPrint("\t");
+  }
+  debugPrint("\n");
+}
+
 void debugPID() {
   debugPrint("Roll_Output: ");
   debugPrint(pid_output_roll);
