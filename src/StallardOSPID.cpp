@@ -39,8 +39,6 @@ double StallardosPID::calculate_pid(double setpoint, double input)
 {
     
     double pid_error_temp;
-    this->pid_setpoint = setpoint;
-    this->pid_input = input;
     pid_error_temp = setpoint - input;
     pid_i_mem += pid_i_gain * pid_error_temp;
     if (pid_i_mem > pid_max)
