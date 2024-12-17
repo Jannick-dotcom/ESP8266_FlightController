@@ -2,6 +2,7 @@
 #define Sensor_h
 
 #include "Variables.h"
+#include "math.h"
 
 void Sensor() {
   MPU_getData();
@@ -41,34 +42,65 @@ void Sensor() {
 void SensorInit() {
   Wire.begin();
   Wire.setClock(400000);                                                //I2C Frequenz auf 400kHz setzen
-
+  debugPrint("Pinging Gyro\n");
   if (ping_gyro()) {
+    uint8_t success = false;
+    debugPrint("Found Gyro\n");
     Wire.beginTransmission(0x68);                                      //Start communication with the address found during search.
     Wire.write(0x6B);                                                  //We want to write to the PWR_MGMT_1 register (6B hex)
     Wire.write(0x00);                                                  //Set the register bits as 00000000 to activate the gyro
-    Wire.endTransmission();                                            //End the transmission with the gyro.
+    success = Wire.endTransmission();                                            //End the transmission with the gyro.
     delay(10);
+    if(success != 0)
+    {
+      debugPrint("Failed to configure sensor1: ");
+      debugPrint(success);
+      debugPrint("\n");
+      return;
+    }
     //Configure the accelerometer (+/-8g)
     Wire.beginTransmission(0x68);                                        //Start communicating with the MPU-6050
     Wire.write(0x1C);                                                    //Send the requested starting register
     Wire.write(0x10);                                                    //Set the requested starting register
-    Wire.endTransmission();                                              //End the transmission
+    success = Wire.endTransmission();                                              //End the transmission
     delay(10);
+    if(success != 0)
+    {
+      debugPrint("Failed to configure sensor2: ");
+      debugPrint(success);
+      debugPrint("\n");
+      return;
+    }
     //Configure the gyro (500dps full scale)
     Wire.beginTransmission(0x68);                                        //Start communicating with the MPU-6050
     Wire.write(0x1B);                                                    //Send the requested starting register
     Wire.write(0x08);                                                    //Set the requested starting register
-    Wire.endTransmission();                                              //End the transmission
+    success = Wire.endTransmission() ;                                              //End the transmission
     delay(10);
-    
+    if(success != 0)
+    {
+      debugPrint("Failed to configure sensor3: ");
+      debugPrint(success);
+      debugPrint("\n");
+      return;
+    }
     Wire.beginTransmission(0x68);                                      //Start communication with the address found during search
     Wire.write(0x1A);                                                          //We want to write to the CONFIG register (1A hex)
     Wire.write(0x03);                                                          //Set the register bits as 00000011 (Set Digital Low Pass Filter to ~43Hz)
-    Wire.endTransmission();                                                    //End the transmission with the gyro
+    success = Wire.endTransmission() ;                                                    //End the transmission with the gyro
     delay(10);
+    if(success != 0)
+    {
+      debugPrint("Failed to configure sensor4: ");
+      debugPrint(success);
+      debugPrint("\n");
+      return;
+    }
+    debugPrint("Configured Sensor\n");
 
 
     for (uint8_t b = 0; b < 10; b++) {
+      debugPrint("Calibration..\n");
       for (uint16_t i = 0; i < 1000; i++) { //Sensor kalibrieren
         MPU_getData();
         gxC += gx;
@@ -77,8 +109,8 @@ void SensorInit() {
         axC += ax;
         ayC += ay;
         azC += az;
+        yield();
       }
-      yield();
     }
     gxC /= 10000.0;
     gyC /= 10000.0;

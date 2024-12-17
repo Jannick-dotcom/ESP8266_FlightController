@@ -51,10 +51,10 @@ public:
   volatile uint8_t cnt_sensor; // count times a sensor value has been sent back
   volatile uint8_t cnt_rec; // count received number of servo messages
   
-private:
+// private:
   enum State {GET_LENGTH, GET_DATA, GET_CHKSUML, GET_CHKSUMH, DISCARD};
 
-  static const uint8_t PROTOCOL_LENGTH = 0x20;
+  static const uint8_t PROTOCOL_LENGTH = 32;
   static const uint8_t PROTOCOL_OVERHEAD = 3; // packet is <len><cmd><data....><chkl><chkh>, overhead=cmd+chk bytes
   static const uint8_t PROTOCOL_TIMEGAP = 3; // Packets are received very ~7ms so use ~half that for the gap
   static const uint8_t PROTOCOL_CHANNELS = 10;

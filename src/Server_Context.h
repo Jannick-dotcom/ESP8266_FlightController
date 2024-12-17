@@ -90,16 +90,16 @@ bool loadconfig() {
     pid_d_gain_yaw = json["pid_d_gain_yaw"];      //Gain setting for the pitch D-controller.
 
     pid_p_gain_roll = pid_p_gain_roll;
-    pid_i_gain_roll = pid_i_gain_roll / Frequenz;
-    pid_d_gain_roll = pid_d_gain_roll / Frequenz;
+    pid_i_gain_roll = pid_i_gain_roll;
+    pid_d_gain_roll = pid_d_gain_roll;
 
     pid_p_gain_pitch = pid_p_gain_pitch;
-    pid_i_gain_pitch = pid_i_gain_pitch / Frequenz;
-    pid_d_gain_pitch = pid_d_gain_pitch / Frequenz;
+    pid_i_gain_pitch = pid_i_gain_pitch;
+    pid_d_gain_pitch = pid_d_gain_pitch;
 
     pid_p_gain_yaw = pid_p_gain_yaw;
-    pid_i_gain_yaw = pid_i_gain_yaw / Frequenz;
-    pid_d_gain_yaw = pid_d_gain_yaw / Frequenz;
+    pid_i_gain_yaw = pid_i_gain_yaw;
+    pid_d_gain_yaw = pid_d_gain_yaw;
 
     pitch = StallardosPID(pid_p_gain_pitch, pid_i_gain_pitch, pid_d_gain_pitch);
     roll = StallardosPID(pid_p_gain_roll, pid_i_gain_roll, pid_d_gain_roll);
@@ -147,7 +147,7 @@ void setupDrone()
   webpage += "</table>";
   webpage += "<input type='submit' value='Senden'></form>";
   webpage += "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update' accept='.bin'><input type='submit' value='Update'></form>";
-  webpage += "<form method='GET' action='http://drone.local:8080/webserial'><input type='submit' value='Webserial'></form>";
+  webpage += "<form method='GET' action='/console'><input type='submit' value='Webserial'></form>";
   webpage += "<form method='GET' action='/check'><input type='submit' value='Check Motors'></form>";
   webpage += "<form method='POST' action='/reset'><input type='submit' value='RESET'></form>";
   webpage += "</body>";
@@ -181,7 +181,7 @@ void root()
 
   webpage += "<form action='/save' method='POST'>";
   toString(Frequenz, value);
-  webpage += "<tr><td>Frequenz[Hz]:</td><td><input type='number' step='0.1' name='Frequenz' style='width: " + inBreite + "px; height: " + inHoehe + "px' value='" + String(value) + "' min='50' max='4000'></td></tr>";
+  webpage += "<tr><td>Frequenz[Hz]:</td><td><input type='number' step='0.1' name='Frequenz' style='width: " + inBreite + "px; height: " + inHoehe + "px' value='" + String(value) + "' min='1' max='4000'></td></tr>";
   toString(degpersec, value);
   webpage += "<tr><td>degpersec:</td><td><input type='number' step='0.001' name='degpersec' style='width: " + inBreite + "px; height: " + inHoehe + "px' value='" + String(value) + "' min='0.001' max='400'></td></tr>";
   toString(pid_max, value);
@@ -370,6 +370,64 @@ void checkDrone()
   server.send(200, "text/html", webpage); // Send a response to the client asking for input
 }
 
+void handleWirelessConsole()
+{
+  String webpage;
+  webpage = "<!Doctype html>\n<html>\n<style type=\"text/css\">\n";
+  webpage += "textarea {\n";
+  webpage += "position: fixed;";
+  webpage += "left:2%; top:10%; bottom:5%; right:2%\n";
+  webpage += "margin: 0;\n";
+  webpage += "padding: 0;\n";
+  webpage += "border-width: 0;\n";
+  webpage += "max-height: 85%\n";
+  webpage += "max-width: 96%\n";
+  webpage += "}\n";
+  webpage += "</style>\n";
+  webpage += "<body style=\"background-color: #f0f0f0\">\n";
+  webpage += "<center>\n";
+  webpage += "<div>\n";
+  webpage += "<h1>WebConsole</h1>\n";
+  webpage += "</div>\n";
+  webpage += "<div>\n";
+  webpage += "<input type=\"checkbox\" id=\"scrollActive\" class=\"messageCheckbox\" name =\"scroll\" value=\"autoScroll\" checked=\"true\"></input>\n";
+  webpage += "<label for=\"scrollActive\">Auto Scrolling</label><br>\n";
+  webpage += "</div>\n";
+  webpage += "<div>\n";
+  webpage += "<textarea id =\"logging\" type=\"text\"></textarea>\n";
+  webpage += "</div>\n";
+  webpage += "</body>\n";
+  webpage += "<script>\n";
+  webpage += "setInterval(function()\n";
+  webpage += "{\n";
+  webpage += "getData();\n";
+  webpage += "}, 100);\n";
+  webpage += "function getData() {\n";
+  webpage += "var xhttp = new XMLHttpRequest();\n";
+  webpage += "xhttp.onreadystatechange = function() {\n";
+  webpage += "if (this.readyState == 4 && this.status == 200) {\n";
+  webpage += "document.getElementById(\"logging\").value += this.responseText;\n"; //this.responseText;
+  webpage += "if (document.getElementById(\"scrollActive\").checked)\n";
+  webpage += "{\n";
+  webpage += "document.getElementById(\"logging\").scrollTop = document.getElementById(\"logging\").scrollHeight;\n";
+  webpage += "}\n";
+  webpage += "document.getElementById(\"logging\").height = \"100%\";\n";
+  webpage += "}\n";
+  webpage += "};\n";
+  webpage += "xhttp.open(\"GET\", \"console/update\", true)\n";
+  webpage += "xhttp.send();\n";
+  webpage += "}\n";
+  webpage += "</script>\n";
+  webpage += "</center>\n";
+  webpage += "</html>\n";
+  server.send(200, "text/html", webpage);
+}
+void wirelessConsoleUpdate()
+{
+  server.send(200, "text/raw", terminalOutput.c_str());
+  terminalOutput = "";
+}
+
 void setupServer() {
   ///////////////////////////////Wlan konnektivität starten und verbinden falls möglich
   WiFi.persistent(false);
@@ -424,10 +482,11 @@ void setupServer() {
   /////////////////////////////Checkseite
   server.on("/check", checkDrone);
   server.on("/check/save", handleCheck);
+
+  server.on("/console", handleWirelessConsole);
+  server.on("/console/update", wirelessConsoleUpdate);
   /////////////////////////////Server Starten
   server.begin();
-  // WebSerial.begin(&serialserver);
-  // serialserver.begin();
 }
 
 void handleServer()

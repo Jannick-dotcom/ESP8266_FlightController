@@ -30,9 +30,8 @@ void resetDrone()
   yield();
 }
 
-uint16_t xx = 0;
 void Funk_Lesen() {
-  if(debugging) return;
+  // if(debugging) return;
   IBus.loop();
   for (uint8_t i = 0; i < 6; i++)
   {
@@ -41,13 +40,13 @@ void Funk_Lesen() {
     {
       Received[i] = 1500;
     }
-    if (Received[i] < 1000 || Received[i] > 2000)  //Wenn kein Signal von Fernsteuerung
+    if ((Received[i] < 1000 || Received[i] > 2000) && !((uint8_t)HardwareIssues & RECEIVER))  //Wenn kein Signal von Fernsteuerung
     {
-      Arming = 1000;
       HardwareIssues = hardwareError((uint8_t)HardwareIssues | RECEIVER);
+      Arming = 1000;
       return;
     }
-    else
+    else if((Received[i] >= 1000 && Received[i] >= 2000) && HardwareIssues & RECEIVER)
     {
       HardwareIssues = hardwareError((uint8_t)HardwareIssues & ~RECEIVER);
     }
@@ -62,22 +61,12 @@ void Funk_Lesen() {
 }
 
 void MPU_getData(void) {
-  if((HardwareIssues & GYRO) && debugging)
-  {
-    ax = rand() % (uint16_t)(pow(2,16) - 1);//0;
-    ay = rand() % (uint16_t)(pow(2,16) - 1);
-    az = rand() % (uint16_t)(pow(2,16) - 1);
-    gx = rand() % (uint16_t)(pow(2,16) - 1);
-    gy = rand() % (uint16_t)(pow(2,16) - 1);
-    g_z = rand() % (uint16_t)(pow(2,16) - 1);
-    return; 
-  }
   Wire.beginTransmission(0x68);                                   //Start communication with the gyro.
   Wire.write(0x3B);                                               //Start reading @ register 43h and auto increment with every read.
   Wire.endTransmission();                                         //End the transmission.
   Wire.requestFrom(0x68, 14);                                     //Request 14 bytes from the gyro.
-  uint16_t timer = micros();                                      //Save the actual timestamp
-  while (Wire.available() < 14 && (micros() - timer < durchlaufT))//Wait until the 14 bytes are received. and check if the Gyro doesn´t response
+  uint64_t timer = micros64();                                      //Save the actual timestamp
+  while (Wire.available() < 14 && (micros64() - timer < durchlaufT))//Wait until the 14 bytes are received. and check if the Gyro doesn´t response
   {
     yield();
   }
@@ -91,6 +80,7 @@ void MPU_getData(void) {
     gy = 0;
     g_z = 0;
     HardwareIssues = hardwareError((uint8_t)HardwareIssues | GYRO);
+    debugPrint("Sensor took too long to respond\n");
     return;
   }
 
@@ -109,8 +99,8 @@ bool ping_gyro(void) {
   Wire.write(0x75);
   Wire.endTransmission();
   Wire.requestFrom(0x68, 1);
-  uint32_t timer = millis() + 100;
-  while (Wire.available() < 1 && timer > millis())              //Wait till the Gyro responded with 1 Byte, or wait 100 ms... what happens earlier
+  uint64_t timer = millis() + 100;
+  while (Wire.available() < 1 && timer > micros64())              //Wait till the Gyro responded with 1 Byte, or wait 100 ms... what happens earlier
   {
     //do nothing
   }
@@ -122,45 +112,6 @@ bool ping_gyro(void) {
   {
     return false;
   }
-}
-
-void calculate_pid() {
-  //Roll calculations
-  float pid_error_temp;
-  pid_error_temp = gyro_roll_input - pid_roll_setpoint;
-  pid_i_mem_roll += pid_i_gain_roll * pid_error_temp;
-  if (pid_i_mem_roll > pid_max) pid_i_mem_roll = pid_max;
-  else if (pid_i_mem_roll < pid_max * -1) pid_i_mem_roll = pid_max * -1;
-
-  pid_output_roll = pid_p_gain_roll * pid_error_temp + pid_i_mem_roll + pid_d_gain_roll * (pid_error_temp - pid_last_roll_d_error);
-  if (pid_output_roll > pid_max) pid_output_roll = pid_max;
-  else if (pid_output_roll < pid_max * -1) pid_output_roll = pid_max * -1;
-
-  pid_last_roll_d_error = pid_error_temp;
-
-  //Pitch calculations
-  pid_error_temp = gyro_pitch_input - pid_pitch_setpoint;
-  pid_i_mem_pitch += pid_i_gain_pitch * pid_error_temp;
-  if (pid_i_mem_pitch > pid_max) pid_i_mem_pitch = pid_max;
-  else if (pid_i_mem_pitch < pid_max * -1) pid_i_mem_pitch = pid_max * -1;
-
-  pid_output_pitch = pid_p_gain_pitch * pid_error_temp + pid_i_mem_pitch + pid_d_gain_pitch * (pid_error_temp - pid_last_pitch_d_error);
-  if (pid_output_pitch > pid_max) pid_output_pitch = pid_max;
-  else if (pid_output_pitch < pid_max * -1) pid_output_pitch = pid_max * -1;
-
-  pid_last_pitch_d_error = pid_error_temp;
-
-  //Yaw calculations
-  pid_error_temp = gyro_yaw_input - pid_yaw_setpoint;
-  pid_i_mem_yaw += pid_i_gain_yaw * pid_error_temp;
-  if (pid_i_mem_yaw > pid_max) pid_i_mem_yaw = pid_max;
-  else if (pid_i_mem_yaw < pid_max * -1) pid_i_mem_yaw = pid_max * -1;
-
-  pid_output_yaw = pid_p_gain_yaw * pid_error_temp + pid_i_mem_yaw + pid_d_gain_yaw * (pid_error_temp - pid_last_yaw_d_error);
-  if (pid_output_yaw > pid_max) pid_output_yaw = pid_max;
-  else if (pid_output_yaw < pid_max * -1) pid_output_yaw = pid_max * -1;
-
-  pid_last_yaw_d_error = pid_error_temp;
 }
 
 void calculate_STOS_pid()
@@ -175,12 +126,6 @@ void berechnen() {
   if (Arming < 1500)    //Wenn disarming
   {
     //PID´s zurücksetzen
-    pid_i_mem_roll = 0;
-    pid_last_roll_d_error = 0;
-    pid_i_mem_pitch = 0;
-    pid_last_pitch_d_error = 0;
-    pid_i_mem_yaw = 0;
-    pid_last_yaw_d_error = 0;
     pitch.reset();
     roll.reset();
     yaw.reset();
@@ -199,15 +144,14 @@ void berechnen() {
     pid_yaw_setpoint = ((Yaw - 1500) / 500.0) * degpersec;
 
     if (Mode > 1300 && Mode <= 2000) {      //Autolevel; Funktioniert das??????????????????
-      pid_roll_setpoint = Roll - (angleRoll * 15.0);
-      pid_pitch_setpoint = Pitch - (anglePitch * 15.0);
+      // pid_roll_setpoint = Roll - (angleRoll * 15.0);
+      // pid_pitch_setpoint = Pitch - (anglePitch * 15.0);
     }
 
     gyro_roll_input = gyroX;
     gyro_pitch_input = gyroY;
     gyro_yaw_input = gyroZ;
 
-    // calculate_pid(); //PID Werte für alle Achsen berechnen
     calculate_STOS_pid();
 
     esc[0] = Throttle + pid_output_pitch + pid_output_roll + pid_output_yaw;//HR
@@ -226,7 +170,7 @@ void berechnen() {
         esc[i] = minPulse;
       }
     }
-    debugPWM();
+    // debugPWM();
 
     //PWM für esc´s aktualisieren
     writePWM(hr, esc[0]);

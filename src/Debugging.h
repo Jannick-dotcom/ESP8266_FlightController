@@ -3,13 +3,17 @@
 
 #include <Arduino.h>
 #include "Variables.h"
+#include <sstream>
 // #include <WebSerial.h>
 
 template <typename T>
 void debugPrint(T str)
 {
-  if(debugging) 
-  Serial.print(str);
+  if(debugging) Serial.print(str);
+  // std::stringstream ss;
+  // ss << str;
+
+  // terminalOutput += ss.str();
 }
 
 void debugReceiver() {
@@ -62,7 +66,7 @@ void debugSensor()
 }
 
 void debugLoop() {
-  debugPrint("LOOP");
+  debugPrint("LOOP\n");
 }
 
 #endif

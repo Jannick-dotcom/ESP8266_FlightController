@@ -8,6 +8,10 @@ StallardosPID::StallardosPID()
 {
     this->pid_i_mem = 0;
     this->pid_last_d_error = 0;
+    this->pid_p_gain = 0;
+    this->pid_i_gain = 0;
+    this->pid_d_gain = 0;
+    this->pid_output = 0;
 }
 
 /**
@@ -24,7 +28,7 @@ StallardosPID::StallardosPID(double p_gain, double i_gain, double d_gain)
     this->pid_p_gain = p_gain;
     this->pid_i_gain = i_gain;
     this->pid_d_gain = d_gain;
-    
+    this->pid_output = 0;
 }
 
 
