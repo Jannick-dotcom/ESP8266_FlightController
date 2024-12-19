@@ -157,14 +157,13 @@ void IBusBM::loop(void) {
   // if we have multiple instances of IBusBM, we (recursively) call the other instances loop() function
   if (IBusBMnext) IBusBMnext->loop(); 
   
-  // only process data already in our UART receive buffer 
   if((millis() - last) > PROTOCOL_TIMEGAP * 10)
   {
-    Serial.print("setting all to zero\n");
     for (uint8_t i = 0; i < PROTOCOL_CHANNELS; i++) {
       channel[i] = 0;
     }
   }
+  // only process data already in our UART receive buffer 
   while (stream->available() > 0) {
     // only consider a new data package if we have not heard anything for >3ms
     uint32_t now = millis();

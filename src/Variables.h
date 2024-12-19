@@ -53,7 +53,7 @@ typedef enum hardwareError
     uint8_t hl = 15;
     uint8_t hr = 0;
 
-    uint8_t debugging = 1; //0-> kein Debugging, 1-> Debugging
+    uint8_t debugging = 0; //0-> kein Debugging, 1-> Debugging
 
     int16_t ax, ay, az;
     int16_t gx, gy, g_z;
