@@ -47,16 +47,16 @@ void saveConfig()
   json["hr"] = hr; //Pin des Hinteren rechten Motors
 
   json["pid_p_gain_roll"] = pid_p_gain_roll;              //Gain setting for the roll P-controller.
-  json["pid_i_gain_roll"] = pid_i_gain_roll * Frequenz;              //Gain setting for the roll I-controller.
-  json["pid_d_gain_roll"] = pid_d_gain_roll * Frequenz;              //Gain setting for the roll D-controller.
+  json["pid_i_gain_roll"] = pid_i_gain_roll;              //Gain setting for the roll I-controller.
+  json["pid_d_gain_roll"] = pid_d_gain_roll;              //Gain setting for the roll D-controller.
 
   json["pid_p_gain_pitch"] = pid_p_gain_pitch;            //Gain setting for the pitch P-controller.
-  json["pid_i_gain_pitch"] = pid_i_gain_pitch * Frequenz;            //Gain setting for the pitch I-controller.
-  json["pid_d_gain_pitch"] = pid_d_gain_pitch * Frequenz;            //Gain setting for the pitch D-controller.
+  json["pid_i_gain_pitch"] = pid_i_gain_pitch;            //Gain setting for the pitch I-controller.
+  json["pid_d_gain_pitch"] = pid_d_gain_pitch;            //Gain setting for the pitch D-controller.
 
   json["pid_p_gain_yaw"] = pid_p_gain_yaw;                //Gain setting for the pitch P-controller.
-  json["pid_i_gain_yaw"] = pid_i_gain_yaw * Frequenz;                //Gain setting for the pitch I-controller.
-  json["pid_d_gain_yaw"] = pid_d_gain_yaw * Frequenz;                //Gain setting for the pitch D-controller.
+  json["pid_i_gain_yaw"] = pid_i_gain_yaw;                //Gain setting for the pitch I-controller.
+  json["pid_d_gain_yaw"] = pid_d_gain_yaw;                //Gain setting for the pitch D-controller.
 
   serializeJson(json, configFile);
   configFile.close();
@@ -88,18 +88,6 @@ bool loadconfig() {
     pid_p_gain_yaw = json["pid_p_gain_yaw"];      //Gain setting for the pitch P-controller.
     pid_i_gain_yaw = json["pid_i_gain_yaw"];      //Gain setting for the pitch I-controller.
     pid_d_gain_yaw = json["pid_d_gain_yaw"];      //Gain setting for the pitch D-controller.
-
-    pid_p_gain_roll = pid_p_gain_roll;
-    pid_i_gain_roll = pid_i_gain_roll;
-    pid_d_gain_roll = pid_d_gain_roll;
-
-    pid_p_gain_pitch = pid_p_gain_pitch;
-    pid_i_gain_pitch = pid_i_gain_pitch;
-    pid_d_gain_pitch = pid_d_gain_pitch;
-
-    pid_p_gain_yaw = pid_p_gain_yaw;
-    pid_i_gain_yaw = pid_i_gain_yaw;
-    pid_d_gain_yaw = pid_d_gain_yaw;
 
     pitch = StallardosPID(pid_p_gain_pitch, pid_i_gain_pitch, pid_d_gain_pitch);
     roll = StallardosPID(pid_p_gain_roll, pid_i_gain_roll, pid_d_gain_roll);
@@ -222,7 +210,7 @@ void handleSave() {
       if (server.argName(i) == "Frequenz")
       {
         Frequenz = server.arg(i).toFloat();
-        durchlaufT = (1000000.0 / Frequenz);
+        durchlaufT = (1e6 / Frequenz);
       }
       else if (server.argName(i) == "degpersec")
       {
