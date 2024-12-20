@@ -17,17 +17,11 @@ void debugPrint(T str)
 }
 
 void debugReceiver() {
-  debugPrint(Throttle);
-  debugPrint("\t");
-  debugPrint(Roll);
-  debugPrint("\t");
-  debugPrint(Pitch);
-  debugPrint("\t");
-  debugPrint(Yaw);
-  debugPrint("\t");
-  debugPrint(Arming);
-  debugPrint("\t");
-  debugPrint(Mode);
+  for (uint8_t i = 0; i < 6; i++)
+  {
+    debugPrint(Received[i]);
+    debugPrint("\t");
+  }
   debugPrint("\n");
 }
 
@@ -56,12 +50,30 @@ void debugPID() {
 
 void debugSensor()
 {
-  debugPrint("AnglePitch\tAngleRoll\tAngleYaw\n");
+  // debugPrint("AnglePitch\tAngleRoll\tAngleYaw\n");
   debugPrint(anglePitch);
   debugPrint("\t");
   debugPrint(angleRoll);
   debugPrint("\t");
+
+  debugPrint(accelPitch);
+  debugPrint("\t");
+  debugPrint(accelRoll);
+  debugPrint("\t");
+
+  debugPrint(accX);
+  debugPrint("\t"); 
+  debugPrint(accY);
+  debugPrint("\t");
+  debugPrint(accZ);
+  debugPrint("\t");
+
+  debugPrint(gyroX);
+  debugPrint("\t");
+  debugPrint(gyroY);
+  debugPrint("\t");
   debugPrint(gyroZ);
+
   debugPrint("\n");
 }
 
