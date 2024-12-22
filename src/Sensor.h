@@ -4,19 +4,40 @@
 #include "Variables.h"
 #include "math.h"
 
+void getAccelAngles(float accX, float accY, float accZ, float &accelPitch, float &accelRoll)
+{
+  //Accelerometer angle calculations
+  float acc_total_vector = sqrt((accX * accX) + (accY * accY) + (accZ * accZ)); //Calculate the total accelerometer vector.
+  if(acc_total_vector != 0)
+  {
+    if (abs(accY) < acc_total_vector) {                                      //Prevent the asin function to produce a NaN
+      accelRoll = asin((float)accY / acc_total_vector) * (1.0/(M_PI / 180.0));       //Calculate the pitch angle.
+    }
+    if (abs(accX) < acc_total_vector) {                                      //Prevent the asin function to produce a NaN
+      accelPitch = asin((float)accX / acc_total_vector) * (1.0/(M_PI / 180.0));       //Calculate the roll angle.
+    }
+    anglePitch = (anglePitch * 0.9996) + (accelPitch * 0.0004);
+    angleRoll = (angleRoll * 0.9996) + (accelRoll * 0.0004);
+  }
+}
+
 void Sensor() {
   MPU_getData();
 
   gx = gx - gxC;
-  gy= gy- gyC;
+  gy = gy - gyC;
   g_z = g_z - gzC;
 
-  ax = ax - axC;    //Kalibrierwerte Beschl. Sensor
-  ay = ay - ayC;
-  az = az - azC;
+  // ax = ax - axC;    //Kalibrierwerte Beschl. Sensor
+  // ay = ay - ayC;
+  // az = az - azC;
+
+  accX = float(ax / 4096.0);
+  accY = float(ay / 4096.0);
+  accZ = float(az / 4096.0);
 
   gyroX = float(gx / 65.5) * invX;
-  gyroY = float(gy/ 65.5) * invY;
+  gyroY = float(gy / 65.5) * invY;
   gyroZ = float(g_z / 65.5) * invZ;
   
   //Gyro angle calculations
@@ -26,17 +47,8 @@ void Sensor() {
   anglePitch -= angleRoll * sin(gyroZ / Frequenz * (M_PI / 180.0));                //If the IMU has yawed transfer the roll angle to the pitch angle.
   angleRoll += anglePitch * sin(gyroZ / Frequenz * (M_PI / 180.0));                //If the IMU has yawed transfer the pitch angle to the roll angle.
 
-  //Accelerometer angle calculations
-  acc_total_vector = sqrt((ax * ax) + (ay * ay) + (az * az)); //Calculate the total accelerometer vector.
-
-  if (abs(ay) < acc_total_vector) {                                      //Prevent the asin function to produce a NaN
-    accY = asin((float)ay / acc_total_vector) * 57.296;       //Calculate the pitch angle.
-  }
-  if (abs(ax) < acc_total_vector) {                                      //Prevent the asin function to produce a NaN
-    accX = asin((float)ax / acc_total_vector) * -57.296;       //Calculate the roll angle.
-  }
-  // anglePitch = (anglePitch * 0.9996) + (accY * 0.0004);
-  // angleRoll = (angleRoll * 0.9996) + (accX * 0.0004);
+  getAccelAngles(accX, accY, accZ, accelPitch, accelRoll);
+  // debugSensor();
 }
 
 void SensorInit() {
@@ -106,29 +118,25 @@ void SensorInit() {
         gxC += gx;
         gyC += gy;
         gzC += g_z;
-        axC += ax;
-        ayC += ay;
-        azC += az;
+        // axC += ax;
+        // ayC += ay;
+        // azC += az;
         yield();
       }
     }
     gxC /= 10000.0;
     gyC /= 10000.0;
     gzC /= 10000.0;
-    axC /= 10000.0;
-    ayC /= 10000.0;
-    azC /= 10000.0;
+    // axC /= 10000.0;
+    // ayC /= 10000.0;
+    // azC /= 10000.0;
     delay(10);
-
-    //Accelerometer angle calculations
-    acc_total_vector = sqrt((ax * ax) + (ay * ay) + (az * az)); //Calculate the total accelerometer vector.
-
-    if (abs(ax) < acc_total_vector) {                                      //Prevent the asin function to produce a NaN
-      anglePitch = asin((float)ax / acc_total_vector) * 57.296;       //Calculate the pitch angle.
-    }
-    if (abs(ay) < acc_total_vector) {                                      //Prevent the asin function to produce a NaN
-      angleRoll = asin((float)ay / acc_total_vector) * -57.296;       //Calculate the roll angle.
-    }
+    accX = float(ax / 4096.0);
+    accY = float(ay / 4096.0);
+    accZ = float(az / 4096.0);
+    getAccelAngles(accX, accY, accZ, accelPitch, accelRoll);
+    anglePitch = accelPitch;
+    angleRoll = accelRoll;
   }
   else
   {

@@ -61,7 +61,8 @@ typedef enum hardwareError
     float anglePitch, angleRoll;
     float gyroX, gyroY, gyroZ;
     float accX, accY, accZ;
-    float acc_total_vector;
+    float accelPitch=0;
+    float accelRoll=0;
 
     // float pid_error_temp;
     float pid_roll_setpoint = 0, gyro_roll_input, pid_output_roll;

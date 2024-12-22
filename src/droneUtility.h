@@ -40,13 +40,13 @@ void Funk_Lesen() {
     {
       Received[i] = 1500;
     }
-    if ((Received[i] < 1000 || Received[i] > 2000) && !((uint8_t)HardwareIssues & RECEIVER))  //Wenn kein Signal von Fernsteuerung
+    if ((Received[i] < 1000 || Received[i] > 2000))  //Wenn kein Signal von Fernsteuerung
     {
       HardwareIssues = hardwareError((uint8_t)HardwareIssues | RECEIVER);
       Arming = 1000;
       return;
     }
-    else if((Received[i] >= 1000 && Received[i] >= 2000) && HardwareIssues & RECEIVER)
+    else if((Received[i] >= 1000 && Received[i] <= 2000))
     {
       HardwareIssues = hardwareError((uint8_t)HardwareIssues & ~RECEIVER);
     }
@@ -57,7 +57,7 @@ void Funk_Lesen() {
   Yaw = Received[3];
   Arming = Received[4];
   Mode = Received[5];
-  debugReceiver();
+  // debugReceiver();
 }
 
 void MPU_getData(void) {
@@ -68,7 +68,7 @@ void MPU_getData(void) {
   uint64_t timer = micros64();                                      //Save the actual timestamp
   while (Wire.available() < 14 && (micros64() - timer < durchlaufT))//Wait until the 14 bytes are received. and check if the Gyro doesn´t response
   {
-    yield();
+    // yield();
   }
 
   if (Wire.available() < 14)                                     //If the Gyro didn´t response everything expected
@@ -134,52 +134,54 @@ void berechnen() {
     writePWM(vr, 1000);
     writePWM(hl, 1000);
     writePWM(vl, 1000);
+    return;
+  }
+  Throttle = (((Throttle - 1000) / 1000.0) * (1000.0 - pid_max)) + 1000; //Ändern des maximalen Throttle punkts auf 2000-pidMax damit auch bei vollem schub noch manöver möglich sind
+
+  if (Mode > 1300 && Mode <= 2000) {      //Autolevel; Funktioniert das??????????????????
+    float rollCorrection = (angleRoll * 300.0 / 20.0);
+    float pitchCorrection = (anglePitch * 300.0 / 20.0);
+    pid_roll_setpoint = Roll - 1500 - constrain(rollCorrection, -300, 300); // 500µs / +-90° = 5.555555
+    pid_pitch_setpoint = Pitch - 1500 - constrain(pitchCorrection, -300, 300);
   }
   else
   {
-    Throttle = (((Throttle - 1000) / 1000.0) * (1000.0 - pid_max)) + 1000; //Ändern des maximalen Throttle punkts auf 1800 damit auch bei vollem schub noch manöver möglich sind
-
     pid_roll_setpoint = ((Roll - 1500) / 500.0) * degpersec; //Eingabe auf +-500 verschieben -> dann in °/s umrechnen
-    pid_pitch_setpoint = ((Pitch - 1500) / 500.0) * degpersec; //Wird wahrscheinlich nicht mit autolevelmode funktionieren!!!!!!!!!!!!!!
-    pid_yaw_setpoint = ((Yaw - 1500) / 500.0) * degpersec;
-
-    if (Mode > 1300 && Mode <= 2000) {      //Autolevel; Funktioniert das??????????????????
-      // pid_roll_setpoint = Roll - (angleRoll * 15.0);
-      // pid_pitch_setpoint = Pitch - (anglePitch * 15.0);
-    }
-
-    gyro_roll_input = gyroX;
-    gyro_pitch_input = gyroY;
-    gyro_yaw_input = gyroZ;
-
-    calculate_STOS_pid();
-
-    esc[0] = Throttle + pid_output_pitch + pid_output_roll + pid_output_yaw;//HR
-    esc[1] = Throttle - pid_output_pitch + pid_output_roll - pid_output_yaw;//VR
-    esc[2] = Throttle + pid_output_pitch - pid_output_roll - pid_output_yaw;//HL
-    esc[3] = Throttle - pid_output_pitch - pid_output_roll + pid_output_yaw;//VL
-
-    for (uint8_t i = 0; i < sizeof(esc) / sizeof(esc[0]); i++)
-    {
-      if (esc[i] > 2000)        //Ausgang auf 2000 limitieren
-      {
-        esc[i] = 2000;
-      }
-      else if (esc[i] < minPulse)   //Motoren am laufen halten wenn minimaler schub
-      {
-        esc[i] = minPulse;
-      }
-    }
-    // debugPWM();
-
-    //PWM für esc´s aktualisieren
-    writePWM(hr, esc[0]);
-    writePWM(vr, esc[1]);
-    writePWM(hl, esc[2]);
-    writePWM(vl, esc[3]);
-    //writePWM(camServo,Campitch);
-    // startWaveform(16, Campitch, 20000 - Campitch, 0);
+    pid_pitch_setpoint = ((Pitch - 1500) / 500.0) * degpersec;
   }
+  pid_yaw_setpoint = ((Yaw - 1500) / 500.0) * degpersec;
+
+  gyro_roll_input = gyroX;
+  gyro_pitch_input = gyroY;
+  gyro_yaw_input = gyroZ;
+
+  calculate_STOS_pid();
+
+  esc[0] = Throttle + pid_output_pitch + pid_output_roll + pid_output_yaw;//HR
+  esc[1] = Throttle - pid_output_pitch + pid_output_roll - pid_output_yaw;//VR
+  esc[2] = Throttle + pid_output_pitch - pid_output_roll - pid_output_yaw;//HL
+  esc[3] = Throttle - pid_output_pitch - pid_output_roll + pid_output_yaw;//VL
+
+  for (uint8_t i = 0; i < sizeof(esc) / sizeof(esc[0]); i++)
+  {
+    if (esc[i] > 2000)        //Ausgang auf 2000 limitieren
+    {
+      esc[i] = 2000;
+    }
+    else if (esc[i] < minPulse)   //Motoren am laufen halten wenn minimaler schub
+    {
+      esc[i] = minPulse;
+    }
+  }
+  // debugPWM();
+
+  //PWM für esc´s aktualisieren
+  writePWM(hr, esc[0]);
+  writePWM(vr, esc[1]);
+  writePWM(hl, esc[2]);
+  writePWM(vl, esc[3]);
+  //writePWM(camServo,Campitch);
+  // startWaveform(16, Campitch, 20000 - Campitch, 0); // 50Hz für Servos
 }
 
 #endif
