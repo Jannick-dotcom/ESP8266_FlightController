@@ -139,9 +139,9 @@ void berechnen() {
   Throttle = (((Throttle - 1000) / 1000.0) * (1000.0 - pid_max)) + 1000; //Ändern des maximalen Throttle punkts auf 2000-pidMax damit auch bei vollem schub noch manöver möglich sind
 
   if (Mode > 1300 && Mode <= 2000) {      //Autolevel; Funktioniert das??????????????????
-    float rollCorrection = (angleRoll * 300.0 / 20.0);
-    float pitchCorrection = (anglePitch * 300.0 / 20.0);
-    pid_roll_setpoint = Roll - 1500 - constrain(rollCorrection, -300, 300); // 500µs / +-90° = 5.555555
+    float rollCorrection = (angleRoll * 300.0 / 5.0);
+    float pitchCorrection = (anglePitch * 300.0 / 5.0);
+    pid_roll_setpoint = Roll - 1500 - constrain(rollCorrection, -300, 300);
     pid_pitch_setpoint = Pitch - 1500 - constrain(pitchCorrection, -300, 300);
   }
   else
