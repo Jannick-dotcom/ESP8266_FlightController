@@ -157,10 +157,10 @@ void berechnen() {
 
   calculate_STOS_pid();
 
-  esc[0] = Throttle + pid_output_pitch + pid_output_roll + pid_output_yaw;//HR
-  esc[1] = Throttle - pid_output_pitch + pid_output_roll - pid_output_yaw;//VR
-  esc[2] = Throttle + pid_output_pitch - pid_output_roll - pid_output_yaw;//HL
-  esc[3] = Throttle - pid_output_pitch - pid_output_roll + pid_output_yaw;//VL
+  esc[0] = Throttle + pid_output_pitch - pid_output_roll + pid_output_yaw;//HR
+  esc[1] = Throttle - pid_output_pitch - pid_output_roll - pid_output_yaw;//VR
+  esc[2] = Throttle + pid_output_pitch + pid_output_roll - pid_output_yaw;//HL
+  esc[3] = Throttle - pid_output_pitch + pid_output_roll + pid_output_yaw;//VL
 
   for (uint8_t i = 0; i < sizeof(esc) / sizeof(esc[0]); i++)
   {
