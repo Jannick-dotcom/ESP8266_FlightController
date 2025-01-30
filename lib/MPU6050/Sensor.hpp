@@ -1,8 +1,42 @@
 #ifndef Sensor_h
 #define Sensor_h
 
-#include "Variables.h"
+#include "Variables.hpp"
 #include "math.h"
+
+void MPU_getData(void) {
+  Wire.beginTransmission(0x68);                                   //Start communication with the gyro.
+  Wire.write(0x3B);                                               //Start reading @ register 43h and auto increment with every read.
+  Wire.endTransmission();                                         //End the transmission.
+  Wire.requestFrom(0x68, 14);                                     //Request 14 bytes from the gyro.
+  uint64_t timer = micros64();                                      //Save the actual timestamp
+  while (Wire.available() < 14 && (micros64() - timer < durchlaufT))//Wait until the 14 bytes are received. and check if the Gyro doesn´t response
+  {
+    // yield();
+  }
+
+  if (Wire.available() < 14)                                     //If the Gyro didn´t response everything expected
+  {
+    ax = 0;
+    ay = 0;
+    az = 0;
+    gx = 0;
+    gy = 0;
+    g_z = 0;
+    HardwareIssues = hardwareError((uint8_t)HardwareIssues | GYRO);
+    debugPrint("Sensor took too long to respond\n");
+    return;
+  }
+
+  HardwareIssues = hardwareError((uint8_t)HardwareIssues & ~GYRO);
+  ax = Wire.read() << 8 | Wire.read();                           //Add the low and high byte to the acc_x variable.
+  ay = Wire.read() << 8 | Wire.read();                           //Add the low and high byte to the acc_y variable.
+  az = Wire.read() << 8 | Wire.read();                           //Add the low and high byte to the acc_z variable.
+  temperature = Wire.read() << 8 | Wire.read();                  //Add the low and high byte to the temperature variable.
+  gx = Wire.read() << 8 | Wire.read();                           //Read high and low part of the angular data.
+  gy = Wire.read() << 8 | Wire.read();                           //Read high and low part of the angular data.
+  g_z = Wire.read() << 8 | Wire.read();                           //Read high and low part of the angular data.
+}
 
 void getAccelAngles(float accX, float accY, float accZ, float &accelPitch, float &accelRoll)
 {
@@ -20,7 +54,25 @@ void getAccelAngles(float accX, float accY, float accZ, float &accelPitch, float
     angleRoll = (angleRoll * 0.9996) + (accelRoll * 0.0004);
   }
 }
-
+bool ping_gyro(void) {
+  Wire.beginTransmission(0x68);
+  Wire.write(0x75);
+  Wire.endTransmission();
+  Wire.requestFrom(0x68, 1);
+  uint64_t timer = millis() + 100;
+  while (Wire.available() < 1 && timer > micros64())              //Wait till the Gyro responded with 1 Byte, or wait 100 ms... what happens earlier
+  {
+    //do nothing
+  }
+  if (Wire.read() == 0x68)                                       //If the Delivered Byte is the hardware address then return success
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
 void Sensor() {
   MPU_getData();
 

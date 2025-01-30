@@ -1,12 +1,12 @@
-#include "Variables.h"
+#include "Variables.hpp"
 
-#include "Server_Context.h"
-#include "Debugging.h"
-#include "droneUtility.h"
-#include "Sensor.h"
+#include "Server_Context.hpp"
+#include "Debugging.hpp"
+#include "droneUtility.hpp"
+#include "Sensor.hpp"
 
 #include <Wire.h>
-#include "IBusBM.h"
+#include "readRemote.hpp"
 
 void setup() {
   IBus.begin(Serial, IBUSBM_NOTIMER);       //Serielle Schnittstelle wird mit 115200 baud initialisiert

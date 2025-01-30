@@ -1,10 +1,10 @@
 #ifndef ESP_SERVER_H
 #define ESP_SERVER_H
 
-#include "droneUtility.h"
+#include "droneUtility.hpp"
 #include <WiFiClient.h>
 #include <ArduinoJson.h>
-#include "Variables.h"
+#include "Variables.hpp"
 
 const String inBreite = "200";
 const String inHoehe = "20";
@@ -23,7 +23,7 @@ ESP8266WebServer server(80);  //Auf Port 80
 #include <WiFi.h>
 #include <Update.h>
 #include <WebServer.h>
-#include "LittleFS.h"
+#include "LittleFS.hpp"
 #include <ESPmDNS.h>
 WebServer server(80);  //Auf Port 80
 #endif

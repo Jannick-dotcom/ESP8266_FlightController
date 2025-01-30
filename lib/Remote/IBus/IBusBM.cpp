@@ -23,7 +23,7 @@
  */
 
 #include <Arduino.h>
-#include "IBusBM.h"
+#include "IBusBM.hpp"
 
 // pointer to the first class instance to be used to call the loop() method from timer interrupt
 // will be initiated by class constructor, then daisy channed to other class instances if we have more than one
