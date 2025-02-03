@@ -5,6 +5,7 @@
 #include <WiFiClient.h>
 #include <ArduinoJson.h>
 #include "Variables.hpp"
+#include "Debugging.hpp"
 
 const String inBreite = "200";
 const String inHoehe = "20";

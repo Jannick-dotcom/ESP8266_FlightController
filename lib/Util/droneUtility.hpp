@@ -1,6 +1,6 @@
 #ifndef droneUtility_h
 #define droneUtility_h
-#ifdef Arduino
+#ifndef NATIVE
 #include <Wire.h>
 #include "Debugging.hpp"
 #endif

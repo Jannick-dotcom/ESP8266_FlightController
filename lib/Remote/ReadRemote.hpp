@@ -1,7 +1,8 @@
-#pragma once
-#include "IBus/IBusBM.hpp"
-#include "Variables.hpp"
+#ifndef ReadRemote_H
+#define ReadRemote_H
 
+#include "IBusBM.hpp"
+#include "Variables.hpp"
 
 IBusBM IBus;
 
@@ -34,3 +35,4 @@ void Funk_Lesen() {
   Mode = Received[5];
   // debugReceiver();
 }
+#endif

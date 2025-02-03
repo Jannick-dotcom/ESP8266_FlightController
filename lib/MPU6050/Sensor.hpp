@@ -3,6 +3,7 @@
 
 #include "Variables.hpp"
 #include "math.h"
+#include <Wire.h>
 
 void MPU_getData(void) {
   Wire.beginTransmission(0x68);                                   //Start communication with the gyro.
@@ -44,12 +45,12 @@ void getAccelAngles(float accX, float accY, float accZ, float &accelPitch, float
   float acc_total_vector = sqrt((accX * accX) + (accY * accY) + (accZ * accZ)); //Calculate the total accelerometer vector.
   if(acc_total_vector != 0)
   {
-    if (abs(accY) < acc_total_vector) {                                      //Prevent the asin function to produce a NaN
-      accelRoll = asin((float)accY / acc_total_vector) * (1.0/(M_PI / 180.0));       //Calculate the pitch angle.
-    }
-    if (abs(accX) < acc_total_vector) {                                      //Prevent the asin function to produce a NaN
+    // if (abs(accY) < acc_total_vector) {                                      //Prevent the asin function to produce a NaN
+      accelRoll = asin((float)accY / acc_total_vector) * -(1.0/(M_PI / 180.0));       //Calculate the pitch angle.
+    // }
+    // if (abs(accX) < acc_total_vector) {                                      //Prevent the asin function to produce a NaN
       accelPitch = asin((float)accX / acc_total_vector) * (1.0/(M_PI / 180.0));       //Calculate the roll angle.
-    }
+    // }
     anglePitch = (anglePitch * 0.9996) + (accelPitch * 0.0004);
     angleRoll = (angleRoll * 0.9996) + (accelRoll * 0.0004);
   }

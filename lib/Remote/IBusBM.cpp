@@ -32,32 +32,10 @@ IBusBM* IBusBMfirst = NULL;
 
 // Interrupt on timer0 - called every 1 ms
 // we call the IBusSensor.loop() here, so we are certain we respond to sensor requests in a timely matter
-#ifdef ARDUINO_ARCH_AVR
-SIGNAL(TIMER0_COMPA_vect) {
-  if (IBusBMfirst) IBusBMfirst->loop();  // gets new servo values if available and process any sensor data
-}
-#elif defined _VARIANT_ARDUINO_STM32_
-void  onTimer(stimer_t *htim) {
-  if (IBusBMfirst) IBusBMfirst->loop();  // gets new servo values if available and process any sensor data
-}
-#else
+
 void  onTimer() {
   if (IBusBMfirst) IBusBMfirst->loop();  // gets new servo values if available and process any sensor data
 }
-#endif
-
-
-#if defined(ARDUINO_ARCH_MBED)
-extern "C" {
-  void TIMER4_IRQHandler_v() {
-    if (NRF_TIMER4->EVENTS_COMPARE[0] == 1) {   
-        onTimer();
-        NRF_TIMER4->EVENTS_COMPARE[0] = 0;
-    }
-  }
-}
-#endif
-
 
 /*
  *  supports max 14 channels in this lib (with messagelength of 0x20 there is room for 14 channels)
@@ -85,11 +63,7 @@ extern "C" {
  */
 
 void IBusBM::begin(HardwareSerial &serial, int8_t timerid, int8_t rxPin, int8_t txPin) {
-  #ifdef ARDUINO_ARCH_ESP32
-    serial.begin(115200, SERIAL_8N1, rxPin, txPin);
-  #else
-    serial.begin(115200, SERIAL_8N1);
-  #endif
+  serial.begin(115200, SERIAL_8N1);
 
   this->stream = &serial;
   this->state = DISCARD;
@@ -105,48 +79,7 @@ void IBusBM::begin(HardwareSerial &serial, int8_t timerid, int8_t rxPin, int8_t 
   this->IBusBMnext = IBusBMfirst;
 
   if (!IBusBMfirst && timerid != IBUSBM_NOTIMER) {
-    #ifdef ARDUINO_ARCH_AVR
-      // on AVR architectures Timer0 is already used for millis() - we'll just interrupt somewhere in the middle and call the TIMER0_COMPA_vect interrupt
-      OCR0A = 0xAF;
-      TIMSK0 |= _BV(OCIE0A);
-    #else
       // on other architectures we need to use a time
-      #if defined(ARDUINO_ARCH_ESP32) 
-        hw_timer_t * timer = NULL;
-        timer = timerBegin(timerid, F_CPU / 1000000L, true); // defaults to timer_id = 0; divider=80 (1 ms); countUp = true;
-        timerAttachInterrupt(timer, &onTimer, true); // edge = true
-        timerAlarmWrite(timer, 1000, true);  //1 ms
-        timerAlarmEnable(timer);
-      #elif defined(_VARIANT_ARDUINO_STM32_)
-	      TIM_TypeDef * TIMER = TIM1; // Select timer, TODO convert (int8_t timerid) into: (TIM_TypeDef * TIMER = TIMx)
-        static stimer_t TimHandle; // Handler for stimer
-	      TimHandle.timer = TIMER; // Set TIMx instance.
-	      TimerHandleInit(&TimHandle, 1000 - 1, ((uint32_t)(getTimerClkFreq(TIMER) / (1000000)) - 1)); // Set TIMx timer to 1ms 
-	      attachIntHandle(&TimHandle, onTimer); // Attach onTimer interupt routine 
-      #elif defined(ARDUINO_ARCH_MBED)
-        NRF_TIMER4->TASKS_STOP = 1; // Stop timer
-        NRF_TIMER4->MODE = TIMER_MODE_MODE_Timer;  // Set the timer in Counter Mode
-        NRF_TIMER4->BITMODE = TIMER_BITMODE_BITMODE_16Bit << TIMER_BITMODE_BITMODE_Pos;
-        NRF_TIMER2->TASKS_CLEAR = 1;               // clear the task first to be usable for later
-
-        // Set prescaler & compare register.
-        // Prescaler = 0 gives 16MHz timer. 
-        // Prescaler = 4 (2^4) gives 1MHz timer. 
-        NRF_TIMER4->PRESCALER = 4 << TIMER_PRESCALER_PRESCALER_Pos;  
-        NRF_TIMER4->CC[0] = 1000; 
-  
-        // Enable interrupt on Timer 4 for CC[0] compare match events
-        NRF_TIMER4->INTENSET = TIMER_INTENSET_COMPARE0_Enabled << TIMER_INTENSET_COMPARE0_Pos;
-        NRF_TIMER4->SHORTS = TIMER_SHORTS_COMPARE0_CLEAR_Enabled << TIMER_SHORTS_COMPARE0_CLEAR_Pos;
- 
-        NVIC_EnableIRQ(TIMER4_IRQn);
-
-        NRF_TIMER4->TASKS_START = 1;      // Start TIMER2
-      #else
-        // It should not be too difficult to support additional architectures as most have timer functions, but I only tested AVR and ESP32
-        #warning "Timing only supportted for AVR, ESP32 and STM32 architectures. Use timerid IBUSBM_NOTIMER"
-      #endif
-    #endif
   }
   IBusBMfirst = this; 
 }
