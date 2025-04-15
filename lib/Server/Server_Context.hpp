@@ -37,7 +37,6 @@ void saveConfig()
     LittleFS.remove("/config.json");
   }
   File configFile = LittleFS.open("/config.json", "w");
-
   json["Frequenz"] = Frequenz; //Durchlauffrequenz
   json["degpersec"] = degpersec; //Maximale Rotationsgeschwindigkeit im Rate Modus
   json["pid_max"] = pid_max;     //Maximaler PID wert
@@ -211,7 +210,7 @@ void handleSave() {
       if (server.argName(i) == "Frequenz")
       {
         Frequenz = server.arg(i).toFloat();
-        durchlaufT = (1e6 / Frequenz);
+        if(Frequenz < 1) Frequenz = 250;
       }
       else if (server.argName(i) == "degpersec")
       {
@@ -305,7 +304,7 @@ void handleCheck() {
       }
     }
 
-    if(motor != "None" && perc >= 0 && perc <= 100)
+    if(motor != "None" && perc <= 100)
     {
       controlMode = 1;
       if(motor == "FL")

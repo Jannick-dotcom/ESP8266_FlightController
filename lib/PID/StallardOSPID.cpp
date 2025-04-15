@@ -7,11 +7,10 @@
 StallardosPID::StallardosPID()
 {
     this->pid_i_mem = 0;
-    this->pid_last_d_error = 0;
+    this->pid_last_error = 0;
     this->pid_p_gain = 0;
     this->pid_i_gain = 0;
     this->pid_d_gain = 0;
-    this->pid_output = 0;
 }
 
 /**
@@ -24,11 +23,10 @@ StallardosPID::StallardosPID()
 StallardosPID::StallardosPID(double p_gain, double i_gain, double d_gain)
 {
     this->pid_i_mem = 0;
-    this->pid_last_d_error = 0;
+    this->pid_last_error = 0;
     this->pid_p_gain = p_gain;
     this->pid_i_gain = i_gain;
     this->pid_d_gain = d_gain;
-    this->pid_output = 0;
 }
 
 
@@ -39,30 +37,38 @@ StallardosPID::StallardosPID(double p_gain, double i_gain, double d_gain)
  * @param input input of the pid controller
  * @return output of the pid controller
  */
-double StallardosPID::calculate_pid(double setpoint, double input)
+double StallardosPID::calculate_pid(double setpoint, double input, double dT)
 {
-    
-    double pid_error_temp;
-    pid_error_temp = setpoint - input;
-    pid_i_mem += pid_i_gain * pid_error_temp;
+    double pid_error = setpoint - input;
+
+    //P
+    double P = pid_p_gain * pid_error;
+
+    //I
+    double I = pid_i_mem + pid_i_gain * pid_error * dT;
+    pid_i_mem += I;
     if (pid_i_mem > pid_max)
         pid_i_mem = pid_max;
     else if (pid_i_mem < pid_max * -1)
         pid_i_mem = pid_max * -1;
+    //D
+    double D = (pid_error - pid_last_error) * pid_d_gain / dT;
+    pid_last_error = pid_error;
 
-    pid_output = pid_p_gain * pid_error_temp + pid_i_mem + pid_d_gain * (pid_error_temp - pid_last_d_error);
+    //Combine
+    double pid_output = P + I + D;
+
+    //Limit
     if (pid_output > pid_max)
         pid_output = pid_max;
     else if (pid_output < pid_max * -1)
         pid_output = pid_max * -1;
 
-    pid_last_d_error = pid_error_temp;
-    
     return pid_output;
 }
 
 void StallardosPID::reset()
 {
     this->pid_i_mem = 0;
-    this->pid_last_d_error = 0;
+    this->pid_last_error = 0;
 }

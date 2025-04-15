@@ -41,9 +41,9 @@ typedef enum hardwareError
     /////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //Invertvariables
-    int8_t invX = 1;
-    int8_t invY = -1;
-    int8_t invZ = -1;
+    int8_t invX = -1;
+    int8_t invY = 1;
+    int8_t invZ = 1;
 
     uint8_t anzMotoren = 4;
 
@@ -63,6 +63,7 @@ typedef enum hardwareError
     float accX, accY, accZ;
     float accelPitch=0;
     float accelRoll=0;
+    float yawImu = 0;
 
     // float pid_error_temp;
     float pid_roll_setpoint = 0, gyro_roll_input, pid_output_roll;

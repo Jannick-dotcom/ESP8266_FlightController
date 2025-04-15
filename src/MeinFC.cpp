@@ -15,6 +15,7 @@ void setup() {
   LittleFS.begin();           //Flash Speicher vorbereiten
   loadconfig();             //Konfigurationen aus Flash Speicher Laden
   ////////////////////////////////////////////////////
+  ////////////////////////////Servo und 4 Motoren ansprechen
   // pinMode(16, OUTPUT); //HR
   if (!debugging)
   {
@@ -36,21 +37,17 @@ void setup() {
   }
   /////////////////////////////////////////////Sensoroffsets berechnen
   SensorInit();  //MPU6050 kalibrieren. Drohne nicht bewegen!!
-  ////////////////////////////Servo und 4 Motoren ansprechen
   ////////////////////////////Erster Schleifendurchlauf festlegen
-
   if(Frequenz == 0)
   {
     Frequenz = 250;
   }
-  durchlaufT = (1e6 / Frequenz);
+  nextloop = micros64() + 1e9 / 2000;
 }
 
 void loop() {
-  while (micros64() < nextloop)    //Definierte wiederholrate einhalten
-  {
-  }
-  nextloop = micros64() + durchlaufT; //nächster Schleifendurchlauf festlegen (in us)
+  while (micros64() < nextloop);    //Definierte wiederholrate einhalten
+  nextloop = micros64() + 2000.0 / 1e9;
   Funk_Lesen();
   if(Arming < 1500 || debugging)
   {
