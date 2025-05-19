@@ -15,23 +15,6 @@ void calculate_STOS_pid()
   pid_output_yaw = yaw.calculate_pid(pid_yaw_setpoint, gyro_yaw_input, deltaT);
 }
 
-template <class T>
-T constrainValue(T val, uint32_t max, uint32_t min)
-{
-  if(val > max)
-  {
-    return max;
-  }
-  else if(val < min)
-  {
-    return min;
-  }
-  else
-  {
-    return val;
-  }
-}
-
 void berechnen() {
   if(controlMode == 1) return; //If checking the motors -> don't overwrite
   if (Arming < 1500)    //Wenn disarming
@@ -68,7 +51,7 @@ void berechnen() {
   gyro_yaw_input = -gyroZ;
 
   calculate_STOS_pid();
-  debugPID();
+  // debugPID();
   esc[0] = Throttle - pid_output_pitch - pid_output_roll + pid_output_yaw;//HR
   esc[1] = Throttle + pid_output_pitch - pid_output_roll - pid_output_yaw;//VR
   esc[2] = Throttle - pid_output_pitch + pid_output_roll - pid_output_yaw;//HL

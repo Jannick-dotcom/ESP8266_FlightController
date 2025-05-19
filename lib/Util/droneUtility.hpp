@@ -3,9 +3,10 @@
 #ifndef NATIVE
 #include <Wire.h>
 #include "Debugging.hpp"
+#else
+#include "mockTime.hpp"
 #endif
 #include "Variables.hpp"
-
 
 #ifdef ESP8266
 #include "core_esp8266_waveform.h" //Nützlich für PWM
@@ -30,4 +31,21 @@ void resetDrone()
   yield();
 }
 #endif
+
+template <class T>
+void constrainValue(T &val, uint32_t max, uint32_t min)
+{
+  if(val > max)
+  {
+    val = max;
+  }
+  else if(val < min)
+  {
+    val = min;
+  }
+  else
+  {
+    return;
+  }
+}
 #endif
