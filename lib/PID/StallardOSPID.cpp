@@ -46,7 +46,7 @@ double StallardosPID::calculate_pid(double setpoint, double input, double dT)
 
     //I
     double I = pid_i_mem + pid_i_gain * pid_error * dT;
-    pid_i_mem += I;
+    pid_i_mem = I;
     if (pid_i_mem > pid_max)
         pid_i_mem = pid_max;
     else if (pid_i_mem < pid_max * -1)
