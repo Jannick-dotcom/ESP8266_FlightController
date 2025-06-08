@@ -8,6 +8,7 @@
 
 void MPU_getData(void)
 {
+  static const uint8_t c_ctBitsInBytes = 8;
   Wire.beginTransmission(0x68);                                // Start communication with the gyro.
   Wire.write(0x3B);                                            // Start reading @ register 43h and auto increment with every read.
   Wire.endTransmission();                                      // End the transmission.
@@ -32,13 +33,13 @@ void MPU_getData(void)
   }
 
   HardwareIssues = hardwareError((uint8_t)HardwareIssues & ~GYRO);
-  ax = Wire.read() << 8 | Wire.read();          // Add the low and high byte to the acc_x variable.
-  ay = Wire.read() << 8 | Wire.read();          // Add the low and high byte to the acc_y variable.
-  az = Wire.read() << 8 | Wire.read();          // Add the low and high byte to the acc_z variable.
-  temperature = Wire.read() << 8 | Wire.read(); // Add the low and high byte to the temperature variable.
-  gx = Wire.read() << 8 | Wire.read();          // Read high and low part of the angular data.
-  gy = Wire.read() << 8 | Wire.read();          // Read high and low part of the angular data.
-  g_z = Wire.read() << 8 | Wire.read();         // Read high and low part of the angular data.
+  ax = Wire.read() << c_ctBitsInBytes | Wire.read();          // Add the low and high byte to the acc_x variable.
+  ay = Wire.read() << c_ctBitsInBytes | Wire.read();          // Add the low and high byte to the acc_y variable.
+  az = Wire.read() << c_ctBitsInBytes | Wire.read();          // Add the low and high byte to the acc_z variable.
+  temperature = Wire.read() << c_ctBitsInBytes | Wire.read(); // Add the low and high byte to the temperature variable.
+  gx = Wire.read() << c_ctBitsInBytes | Wire.read();          // Read high and low part of the angular data.
+  gy = Wire.read() << c_ctBitsInBytes | Wire.read();          // Read high and low part of the angular data.
+  g_z = Wire.read() << c_ctBitsInBytes | Wire.read();         // Read high and low part of the angular data.
 }
 
 bool ping_gyro(void)
@@ -69,24 +70,24 @@ void Sensor()
 {
   MPU_getData();
   uint64_t currentTime = micros64();
-  float deltaT = (currentTime - lastSensor) / 1000000.0;
+  float deltaT = float(currentTime - lastSensor) / 1000000.0f;
   lastSensor = currentTime;
 
-  gx = gx - gxC;
-  gy = gy - gyC;
-  g_z = g_z - gzC;
+  gx = int16_t((double)gx - gxC);
+  gy = int16_t((double)gy - gyC);
+  g_z = int16_t((double)g_z - gzC);
 
   // ax = ax - axC;    //Kalibrierwerte Beschl. Sensor
   // ay = ay - ayC;
   // az = az - azC;
 
-  accX = float(ax / 4096.0);
-  accY = float(ay / 4096.0);
-  accZ = float(az / 4096.0);
+  accX = double(ax / 4096.0);
+  accY = double(ay / 4096.0);
+  accZ = double(az / 4096.0);
 
-  gyroX = float(gx / 65.5);
-  gyroY = float(gy / 65.5);
-  gyroZ = float(g_z / 65.5);
+  gyroX = double(gx / 65.5);
+  gyroY = double(gy / 65.5);
+  gyroZ = double(g_z / 65.5);
 
   // Gyro angle calculations
   // anglePitch += gyroY * deltaT; // Calculate the traveled pitch angle and add this to the angle_pitch variable.
@@ -98,10 +99,7 @@ void Sensor()
 
   // MadgwickQuaternionUpdate(accX, accY, accZ, gyroX, gyroY, gyroZ, deltaT);
   
-  float acc[3] = {accX, accY, accZ};  // Assuming the device is flat on the ground
-  float gyro[3] = {DEG2RAD(gyroX), DEG2RAD(gyroY), DEG2RAD(gyroZ)};  // Small rotation around the y-axis
-  
-  filter.updateIMU(gyro[0], gyro[1], gyro[2], acc[0], acc[1], acc[2], deltaT);
+  filter.updateIMU(DEG2RAD(gyroX), DEG2RAD(gyroY), DEG2RAD(gyroZ), accX, accY, accZ, deltaT);
   filter.getEuler(angleRoll, anglePitch, yawImu);
   // debugSensor();
 }

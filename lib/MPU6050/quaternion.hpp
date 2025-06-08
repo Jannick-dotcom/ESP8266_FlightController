@@ -1,18 +1,18 @@
 #include <iostream>
 #include <cmath>
 
-#define RAD2DEG(x) ((x) * 180.0f / M_PI)
-#define DEG2RAD(x) ((x) * M_PI) / 180.0f
+#define RAD2DEG(x) ((x) * 180.0 / M_PI)
+#define DEG2RAD(x) ((x) * M_PI) / 180.0
 
 struct MadgwickAHRS {
-    float beta;     // Algorithm gain
-    float q0, q1, q2, q3; // Quaternion
+    double beta;     // Algorithm gain
+    double q0, q1, q2, q3; // Quaternion
 
-    MadgwickAHRS(float beta_ = 0.1f) : beta(beta_), q0(1), q1(0), q2(0), q3(0) {}
+    MadgwickAHRS(double beta_ = 0.1f) : beta(beta_), q0(1), q1(0), q2(0), q3(0) {}
 
-    void updateIMU(float gx, float gy, float gz, float ax, float ay, float az, float dt) {
-        float norm, s0, s1, s2, s3;
-        float qDot0, qDot1, qDot2, qDot3;
+    void updateIMU(double gx, double gy, double gz, double ax, double ay, double az, double dt) {
+        double norm, s0, s1, s2, s3;
+        double qDot0, qDot1, qDot2, qDot3;
 
         // Normalize accelerometer
         norm = sqrt(ax * ax + ay * ay + az * az);
@@ -28,9 +28,9 @@ struct MadgwickAHRS {
         qDot3 = 0.5f * ( q0 * gz + q1 * gy - q2 * gx);
 
         // Gradient descent algorithm corrective step
-        float f1 = 2*(q1*q3 - q0*q2) - ax;
-        float f2 = 2*(q0*q1 + q2*q3) - ay;
-        float f3 = 2*(0.5f - q1*q1 - q2*q2) - az;
+        double f1 = 2*(q1*q3 - q0*q2) - ax;
+        double f2 = 2*(q0*q1 + q2*q3) - ay;
+        double f3 = 2*(0.5f - q1*q1 - q2*q2) - az;
         s0 = -2*q2*f1 + 2*q1*f2;
         s1 = 2*q3*f1 + 2*q0*f2 - 4*q1*f3;
         s2 = -2*q0*f1 + 2*q3*f2 - 4*q2*f3;
@@ -63,7 +63,7 @@ struct MadgwickAHRS {
         q3 /= norm;
     }
 
-    void getEuler(float &roll, float &pitch, float &yaw) const {
+    void getEuler(double &roll, double &pitch, double &yaw) const {
         roll = RAD2DEG(atan2(2.0f*(q0*q1 + q2*q3), 1.0f - 2.0f*(q1*q1 + q2*q2)));
         pitch = RAD2DEG(asin(2.0f*(q0*q2 - q3*q1)));
         yaw = atan2(2.0f*(q0*q3 + q1*q2), 1.0f - 2.0f*(q2*q2 + q3*q3));

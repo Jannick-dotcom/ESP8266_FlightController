@@ -31,7 +31,7 @@ class Stream;
 class IBusBM {
 
 public:
-  void begin(HardwareSerial &serial, int8_t timerid=0, int8_t rxPin=-1, int8_t txPin=-1);
+  void begin(HardwareSerial &serial, int8_t timerid=0);
   uint16_t readChannel(uint8_t channelNr); // read servo channel 0..9
   uint8_t addSensor(uint8_t type, uint8_t len=2); // add sensor type and data length (2 or 4), returns address
   void setSensorMeasurement(uint8_t adr, int32_t value);

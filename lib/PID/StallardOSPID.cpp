@@ -1,5 +1,5 @@
 #include "StallardOSPID.hpp"
-
+#include "droneUtility.hpp"
 /**
  * create a pid controller.
  *
@@ -47,10 +47,7 @@ double StallardosPID::calculate_pid(double setpoint, double input, double dT)
     //I
     double I = pid_i_mem + pid_i_gain * pid_error * dT;
     pid_i_mem = I;
-    if (pid_i_mem > pid_max)
-        pid_i_mem = pid_max;
-    else if (pid_i_mem < pid_max * -1)
-        pid_i_mem = pid_max * -1;
+    constrainValue(pid_i_mem, pid_max, -pid_max);
     //D
     double D = (pid_error - pid_last_error) * pid_d_gain / dT;
     pid_last_error = pid_error;
@@ -59,10 +56,7 @@ double StallardosPID::calculate_pid(double setpoint, double input, double dT)
     double pid_output = P + I + D;
 
     //Limit
-    if (pid_output > pid_max)
-        pid_output = pid_max;
-    else if (pid_output < pid_max * -1)
-        pid_output = pid_max * -1;
+    constrainValue(pid_output, pid_max, -pid_max);
 
     return pid_output;
 }

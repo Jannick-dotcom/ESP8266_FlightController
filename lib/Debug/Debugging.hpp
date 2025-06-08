@@ -1,5 +1,4 @@
-#ifndef Debugging_h
-#define Debugging_h
+#pragma once
 
 #include <Arduino.h>
 #include <sstream>
@@ -74,5 +73,3 @@ void debugSensor()
 void debugLoop() {
   debugPrint("LOOP\n");
 }
-
-#endif

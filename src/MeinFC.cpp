@@ -33,7 +33,6 @@ void setup() {
     writePWM(hl,1000);
     writePWM(vl,1000);
 #endif
-    delay(10000);
   }
   /////////////////////////////////////////////Sensoroffsets berechnen
   SensorInit();  //MPU6050 kalibrieren. Drohne nicht bewegen!!
@@ -42,18 +41,14 @@ void setup() {
   {
     Frequenz = 250;
   }
-  nextloop = micros64() + 1e9 / 2000;
+  nextloop = micros64() + (uint64_t)1e9 / 2000;
 }
 
 void loop() {
   while (micros64() < nextloop);    //Definierte wiederholrate einhalten
-  nextloop = micros64() + 2000.0 / 1e9;
+  nextloop = uint64_t((double)micros64() + 2000.0 / 1e9);
   Funk_Lesen();
-  if(Arming < 1500 || debugging)
-  {
-    handleServer();
-    yield(); //Feed the Watchdog
-  }
   Sensor();
   berechnen();
+  handleServer();
 }

@@ -1,5 +1,4 @@
-#ifndef Variables_h
-#define Variables_h
+#pragma once
 
 #include "stdint.h"
 #include "StallardOSPID.hpp"
@@ -18,20 +17,20 @@ typedef enum hardwareError
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     float Frequenz = 100;                      //Sampling Rate Default: 250Hz
 
-    float degpersec = 80.0;                    //Maximale Rotationsgeschwindigkeit im Rate Modus [°/s]
-    float pid_max = 200.0;                     //Max Output of PID-Controller
+    double degpersec = 80.0;                    //Maximale Rotationsgeschwindigkeit im Rate Modus [°/s]
+    double pid_max = 200.0;                     //Max Output of PID-Controller
 
-    float pid_p_gain_roll = 5.0;               //Gain setting for the roll P-controller
-    float pid_i_gain_roll = 0.50;               //Gain setting for the roll I-controller
-    float pid_d_gain_roll = 0.0;               //Gain setting for the roll D-controller
+    double pid_p_gain_roll = 5.0;               //Gain setting for the roll P-controller
+    double pid_i_gain_roll = 0.50;               //Gain setting for the roll I-controller
+    double pid_d_gain_roll = 0.0;               //Gain setting for the roll D-controller
 
-    float pid_p_gain_pitch = 5.0;              //Gain setting for the pitch P-controller.
-    float pid_i_gain_pitch = 0.50;              //Gain setting for the pitch I-controller.
-    float pid_d_gain_pitch = 0.0;              //Gain setting for the pitch D-controller.
+    double pid_p_gain_pitch = 5.0;              //Gain setting for the pitch P-controller.
+    double pid_i_gain_pitch = 0.50;              //Gain setting for the pitch I-controller.
+    double pid_d_gain_pitch = 0.0;              //Gain setting for the pitch D-controller.
 
-    float pid_p_gain_yaw = 1.0;                //Gain setting for the pitch P-controller.
-    float pid_i_gain_yaw = 0.0;                //Gain setting for the pitch I-controller.
-    float pid_d_gain_yaw = 0.0;                //Gain setting for the pitch D-controller.
+    double pid_p_gain_yaw = 1.0;                //Gain setting for the pitch P-controller.
+    double pid_i_gain_yaw = 0.0;                //Gain setting for the pitch I-controller.
+    double pid_d_gain_yaw = 0.0;                //Gain setting for the pitch D-controller.
 
     const char *ssid = "Drohne";
     const char *pass = "Passwort";
@@ -58,23 +57,24 @@ typedef enum hardwareError
     int16_t ax, ay, az;
     int16_t gx, gy, g_z;
     int16_t temperature;
-    float anglePitch, angleRoll;
-    float gyroX, gyroY, gyroZ;
-    float accX, accY, accZ;
-    float accelPitch=0;
-    float accelRoll=0;
-    float yawImu = 0;
+    double anglePitch, angleRoll;
+    double gyroX, gyroY, gyroZ;
+    double accX, accY, accZ;
+    double accelPitch=0;
+    double accelRoll=0;
+    double yawImu = 0;
 
     // float pid_error_temp;
-    float pid_roll_setpoint = 0, gyro_roll_input, pid_output_roll;
-    float pid_pitch_setpoint = 0, gyro_pitch_input, pid_output_pitch;
-    float pid_yaw_setpoint = 0, gyro_yaw_input, pid_output_yaw;
+    double pid_roll_setpoint = 0, gyro_roll_input, pid_output_roll;
+    double pid_pitch_setpoint = 0, gyro_pitch_input, pid_output_pitch;
+    double pid_yaw_setpoint = 0, gyro_yaw_input, pid_output_yaw;
     StallardosPID pitch(pid_p_gain_pitch, pid_i_gain_pitch, pid_d_gain_pitch);
     StallardosPID roll(pid_p_gain_roll, pid_i_gain_roll, pid_d_gain_roll);
     StallardosPID yaw(pid_p_gain_yaw, pid_i_gain_yaw, pid_d_gain_yaw);
 
     uint16_t Received[10];  //Empfangene Werte
-    float Throttle, Pitch, Roll, Yaw, Mode, Arming;  //Steuerungswerte von Fernbedienung
+    double Throttle, Pitch, Roll, Yaw; //Werte von Fernbedienung
+    uint16_t Mode, Arming;  //Steuerungswerte von Fernbedienung
     uint16_t minPulse = 1040; //Minimaler wert der zu den ESC´s gesendet wird wenn die Motoren laufen sollen
     uint16_t esc[4];    //Ausgangswerte zu Motoren
     double gxC, gyC, gzC; //Kalibrierwerte Gyro
@@ -85,5 +85,3 @@ typedef enum hardwareError
 
     uint32_t durchlaufT; //us per durchlauf
     uint16_t timeNeeded;
-
-#endif
